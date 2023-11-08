@@ -1,7 +1,8 @@
 ---
 
 # Python3 support
-pip_virtualenv_command: /usr/bin/python3 -m virtualenv --copies
+#pip_virtualenv_command: /bin/python3.11 -m venv --copies
+pip_virtualenv_command: "{{ miniconda_prefix }}/envs/_galaxy_/bin/python3.11 -m venv --copies"
 
 # Galaxy
 
@@ -10,9 +11,11 @@ galaxy_create_user: false
 galaxy_separate_privileges: true
 galaxy_manage_paths: true
 galaxy_layout: root-dir
-galaxy_root: /cluster/galaxy-test/srv/galaxy
+galaxy_root: /cluster/galaxy/srv/galaxy
+galaxy_virtualenv_command: "{{ miniconda_prefix }}/envs/_galaxy_/bin/virtualenv -p {{ miniconda_prefix }}/envs/_galaxy_/bin/python3.11"
 
 galaxy_user: {name: "{{ galaxy_user_name }}", shell: /bin/bash, uid: 2100096}
+galaxy_user_group: "ec01-galaxy-group"
 galaxy_privsep_user: "{{ galaxy_user_name }}"
 
 galaxy_commit_id: release_23.1
@@ -24,8 +27,8 @@ galaxy_force_checkout: true
 ### variables that are used in the galaxy.conf templates
 ### if no ssl, leave the ssl_cert_path and ssl_key_path empty
 use_ssl: true
-# ssl_cert_path:  /etc/pki/tls/certs/galaxy01-test_educloud_no.crt
-# ssl_key_path: /etc/pki/tls/private/galaxy01-test.educloud.no.key
+# ssl_cert_path:  /etc/pki/tls/certs/galaxy01_educloud_no.crt
+# ssl_key_path: /etc/pki/tls/private/galaxy01.educloud.no.key
 
 # Galaxy
 
@@ -53,7 +56,7 @@ galaxy_server_dir: "{{ galaxy_root }}/server"
 gunicorn_dir: /gunicorn
 
 # All data dir : job dirs, files, tmp, tools, etc.
-galaxy_lifeportal_data_dir: /cluster/galaxy-data
+galaxy_lifeportal_data_dir: /cluster/galaxy-data-prod
 
 # -- General tool related dirs --
 tools_root: "{{ galaxy_lifeportal_data_dir }}/tools/prod"
@@ -66,18 +69,22 @@ tool_search_index_dir: "{{ galaxy_root }}/var/cache/tool_search_index"
 ucsc_build_sites: "{{ galaxy_root }}/server/tool-data/shared/ucsc/ucsc_build_sites.txt.sample"
 visualization_plugins_directory: "{{ galaxy_root }}/server/config/plugins/visualizations"
 
+## -- Miniconda needed for cross-platform copy of Python and Galaxy's venv -- ##
+# All other settings are in galaxyproject.miniconda role : defaults/main.yml
+miniconda_prefix: "/cluster/galaxy/_conda"
+
 # Source and target file directories for oidc backends
-galaxy_oidc_backend_files_src_dir: files/galaxy/oidc_files/
+galaxy_oidc_backend_files_src_dir: files/galaxypython3.11/oidc_files/
 galaxy_oidc_backend_files_target_dir: "{{ galaxy_venv_dir }}/lib/python3.11/site-packages/social_core/backends/"
 
 # Paths to real user setup files
-galaxy_scripts_dir: /cluster/galaxy-data/scripts
+galaxy_scripts_dir: /cluster/galaxy-data-prod/scripts
 galaxy_scripts_src_dir: files/galaxy/scripts
 
 galaxy_config:
   galaxy:
     # --Admin-------------------------------------------------
-    brand: "TEST-FOX-portal"
+    brand: "GALAXY-FOX-portal"
     admin_users: ec-nikolaiv@educloud.no,ec-torfin@educloud.no,ec-sabryr@educloud.no
     check_migrate_tools: false
     use_remote_user: false
@@ -93,7 +100,7 @@ galaxy_config:
     show_welcome_with_login: true
 
 ## -- DB -------------------------------------------------
-    database_connection: "postgresql:///galaxytest?host=/var/run/postgresql"
+    database_connection: "postgresql:///galaxy?host=/var/run/postgresql"
 
 
 
@@ -117,12 +124,16 @@ galaxy_config:
 
 # --Standard Config-------------------------------------------
     welcome_url: /static/welcome.html
-    galaxy_infrastructure_url: https://galaxy01-test.educloud.no
+    galaxy_infrastructure_url: https://galaxy01.educloud.no
 
 # -- File sources config
     file_sources_config_file: "{{ galaxy_config_dir }}/file_sources_conf.yml"
 
-# -- Cluster partition based directories -----------------------------
+# -- Enable listing of cluster directories as real user ----------------------------------------
+    list_cluster_directories_script: "sudo -E {{ galaxy_scripts_dir }}/list_cluster_directories.py"
+
+# -- Cluster partition based directories -----------------------------./roles/galaxyproject.galaxy/vars/layout-root-dir.yml:__galaxy_venv_dir: "{{ galaxy_root }}/venv"
+
     file_path: "{{ galaxy_lifeportal_data_dir }}/files"
     new_file_path: "{{ galaxy_lifeportal_data_dir }}/tmp"
     template_cache_path: "{{ galaxy_lifeportal_data_dir }}/compiled_templates"
@@ -147,6 +158,7 @@ galaxy_config:
 
 # -- Run jobs as real user setup ----------------------------------------
     outputs_to_working_directory: true
+
     real_system_username: username
     ## Check that the two following lines are not spread on two consecutive lines""
     drmaa_external_runjob_script: "sudo -E DRMAA_LIBRARY_PATH=/drmaa/lib/libdrmaa.so.1  {{ galaxy_scripts_dir }}/drmaa_external_runner.py --assign_all_groups"
@@ -272,7 +284,8 @@ galaxy_scripts_files:
     dest: "{{ galaxy_scripts_dir }}/drmaa_external_runner.py"
   - src: "{{ galaxy_scripts_src_dir }}/external_chown_script.py"
     dest: "{{ galaxy_scripts_dir }}/external_chown_script.py"
-
+  - src: "{{ galaxy_scripts_src_dir }}/list_cluster_directories.py"
+    dest: "{{ galaxy_scripts_dir }}/list_cluster_directories.py"
 
 # -- LMOD activation scripts ----------------------------------------
 lmod_activation_scripts:
@@ -323,5 +336,5 @@ nginx_conf_http:
     image/png
     image/svg+xml
     image/x-icon
-nginx_conf_ssl_certificate: /etc/pki/tls/certs/galaxy01-test_educloud_no.crt
-nginx_conf_ssl_certificate_key: /etc/pki/tls/private/galaxy01-test.educloud.no.key
+nginx_conf_ssl_certificate: /etc/pki/tls/certs/galaxy01_educloud_no.crt
+nginx_conf_ssl_certificate_key: /etc/pki/tls/private/galaxy01.educloud.no.key
