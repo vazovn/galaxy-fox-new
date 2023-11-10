@@ -132,7 +132,7 @@ galaxy_config:
 # -- Enable listing of cluster directories as real user ----------------------------------------
     list_cluster_directories_script: "sudo -E {{ galaxy_scripts_dir }}/list_cluster_directories.py"
 
-# -- Cluster partition based directories -----------------------------./roles/galaxyproject.galaxy/vars/layout-root-dir.yml:__galaxy_venv_dir: "{{ galaxy_root }}/venv"
+# -- Cluster partition based directories -----------------------------
 
     file_path: "{{ galaxy_lifeportal_data_dir }}/files"
     new_file_path: "{{ galaxy_lifeportal_data_dir }}/tmp"
@@ -197,7 +197,7 @@ galaxy_config:
     galaxy_root: "{{ galaxy_root }}/server"
     galaxy_user: "{{ galaxy_user_name }}"
     virtualenv: "{{ galaxy_venv_dir }}"
-    umask: '047'
+    umask: '013'
     gunicorn:
 
       enable: true
@@ -266,10 +266,6 @@ galaxy_config_files:
   - src: files/galaxy/config/file_sources_conf.yml
     dest: "{{ galaxy_root }}/config/file_sources_conf.yml"
 
-# -- Local Tools ----------------------------------------
-galaxy_local_test_tools:
-  - testing_static_slurm.xml
-
 
 # -- OIDC backend items (files) ----------------------------------------
 galaxy_oidc_backend_files:
@@ -295,15 +291,7 @@ lmod_activation_scripts:
 # #-- Dynamic Job Rules Files------------------------------
 galaxy_dynamic_job_rules:
   - generate_slurm_job_params.py
-  - destinations.py
-#
-# # systemd
-# #galaxy_systemd_mode: mule - defined in defaults/main.yml
-# __galaxy_systemd_memory_limit_merged:
-#     mule: 32
-# galaxy_systemd_env: [DRMAA_LIBRARY_PATH="/drmaa/lib/libdrmaa.so.1"]
-# #galaxy_restart_handler_name: - defined in defaults/main.yml
-#
+
 
 # --  NGINX --------------
 nginx_selinux_allow_local_connections: true

@@ -16,6 +16,7 @@
   ansible.builtin.git:
     repo: https://github.com/natefoo/slurm-drmaa.git
     dest: /tmp/slurm-drmaa-nate
+    force: yes
 
 - name: Clone drmaa_utils repo
   ansible.builtin.git:

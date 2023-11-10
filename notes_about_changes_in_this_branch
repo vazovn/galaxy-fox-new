@@ -209,3 +209,25 @@ tools:
 - id: __DATA_FETCH__
   environment: slurm_upload
 == this
+
+
+15. Fix for "Choose local files"
+
+- The /cluster/galaxy-data-prod/tmp dis must look like :
+
+drwxr-xr-x.   4 root      root                  44 Oct 31 09:51 cluster
+drwxrwsr-x. 9 ec-galaxy ec01-galaxy-group 4096 Nov  3 12:25 galaxy-data-prod
+drwxrwsrwx.  2 ec-galaxy ec01-galaxy-group 4096 Nov 10 14:09 tmp
+
+- Set the correct umask of gravity in the group_vars/galaxy01_educloud.yml - it must create o+x files in /cluster/galaxy-data-prod/tmp
+
+umask: '013'
+
+- Debug : If you get an error "Permission denied" or "Operation non-permitted" and still have umask: '013'
+check that the file '746bba0de29f4f32bbd98d356559bacf' in e.g.
+
+"[Errno 13] Permission denied: '/cluster/galaxy-data-prod/tmp/746bba0de29f4f32bbd98d356559bacf'"
+
+is in the directory and is non-writable (may have remained there from previous unsuccessful uploads).
+
+Remove the file!!!!
