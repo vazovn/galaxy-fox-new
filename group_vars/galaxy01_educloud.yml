@@ -100,7 +100,7 @@ galaxy_config:
     show_welcome_with_login: true
 
 ## -- DB -------------------------------------------------
-    database_connection: "postgresql:///galaxy?host=/var/run/postgresql"
+    database_connection: "postgresql:///{{ galaxy_db_name }}?host=/var/run/postgresql"
 
 
 
