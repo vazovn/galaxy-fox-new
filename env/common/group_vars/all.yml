@@ -1,0 +1,15 @@
+---
+# Python 3 support
+#pip_virtualenv_command: /bin/python3.11 -m venv  --copies   # usegalaxy_eu.certbot, usegalaxy_eu.tiaas2, galaxyproject.galaxy
+pip_virtualenv_command: "{{ miniconda_prefix }}/envs/_galaxy_/bin/python3.11 -m venv --copies"
+
+# Common variables needed by all hosts
+
+# ----------------------------------------------------------------------
+#galaxy_user: {name: ec-galaxy, shell: /bin/bash, uid: 2100096}
+galaxy_user_name: ec-galaxy
+galaxy_user_id: 2100096
+#galaxy_group: {name: ec-galaxy-group, gid: 2100210}
+galaxy_group: ec01-galaxy-group
+galaxy_group_id: 2102530
+
