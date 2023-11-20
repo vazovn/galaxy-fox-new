@@ -148,3 +148,31 @@ aspasia.ad.fp.educloud.no:/fp/homes01/        /fp/homes01              nfs ro,bg
 aspasia.ad.fp.educloud.no:/fp/projects01         /fp/projects01         nfs ro,bg,hard,intr,tcp,nfsvers=3
 
 
+
+========================= Import Directories solution ================
+
+Files from homes can be imported using the import libraries:
+
+1.
+Create 
+/cluster/galaxy-data-prod/libraries/user_uploads
+/cluster/galaxy-data-prod/libraries/admin_uploads
+with
+drwxrwsr-x. 2 ec-galaxy ec01-galaxy-group
+
+2.
+Add the following lines to galaxy.yml
+
+    user_library_import_dir_auto_creation: true
+    library_import_dir: /cluster/galaxy-data-prod/libraries/admin_uploads
+    user_library_import_dir: /cluster/galaxy-data-prod/libraries/user_uploads
+    user_library_import_symlink_allowlist: /fp/homes01/u01/ec-nikolaiv,/fp/homes01/u01/ec-torfin
+    
+The list in user_library_import_symlink_allowlist contains all homes. After these changes galaxy must be restarted
+
+3.
+In /cluster/galaxy-data-prod/libraries/user_uploads
+run, for ec-nikolaiv, and for all other users respectively
+ln -s /fp/homes01/u01/ec-nikolaiv ec-nikolaiv@educloud.no
+Thus, the requirement that the dirs in user_uploads shall have the emails of the users is satisfied.
+The simmlink solution works only if the symlink name is a user email! No other symlinks will work.
