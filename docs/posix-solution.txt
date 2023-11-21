@@ -175,4 +175,6 @@ In /cluster/galaxy-data-prod/libraries/user_uploads
 run, for ec-nikolaiv, and for all other users respectively
 ln -s /fp/homes01/u01/ec-nikolaiv ec-nikolaiv@educloud.no
 Thus, the requirement that the dirs in user_uploads shall have the emails of the users is satisfied.
-The simmlink solution works only if the symlink name is a user email! No other symlinks will work.
+The symlink solution works only if the symlink name is a user email! No other symlinks will work.
+
+
