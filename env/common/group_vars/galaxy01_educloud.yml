@@ -157,6 +157,14 @@ galaxy_config:
     ## DO NOT ADD "--assign_all_groups" to external_chown_script!!!
     external_chown_script: "sudo -E DRMAA_LIBRARY_PATH=/drmaa/lib/libdrmaa.so.1  {{ galaxy_scripts_dir }}/external_chown_script.py"
 
+# -- Enable Library Import to access user homes on FOX
+#   Make sure that the dirs /libraries/{admin_uploads,user_uploads} exist, otherwise manually create them
+#   Make sure that user_uploads contain symlinks :  the emails of the users, manually create them
+
+    user_library_import_dir_auto_creation: true
+    library_import_dir: "{{ galaxy_lifeportal_data_dir }}/libraries/admin_uploads"
+    user_library_import_dir: "{{ galaxy_lifeportal_data_dir }}/libraries/user_uploads"
+    user_library_import_symlink_allowlist: /fp/homes01/u01/ec-nikolaiv,/fp/homes01/u01/ec-torfin
 
 # -- Tool Configuration----------------------------------------
 
@@ -239,6 +247,8 @@ galaxy_dirs:
   - "{{ tool_dependency_dir }}"
   - "{{ tool_cache_data_dir }}"
   - "{{ tool_search_index_dir }}"
+  - "{{ galaxy_lifeportal_data_dir }}/libraries/admin_uploads"
+  - "{{ galaxy_lifeportal_data_dir }}/libraries/user_uploads"
 
 #
 # #-- Galaxy Config Files-----------------------------------
