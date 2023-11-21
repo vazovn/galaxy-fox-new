@@ -57,9 +57,9 @@
   tags: galaxy_manage_static_setup
 
 ## OIDC  - Educloud  configuration tasks ##
-- name: Include lifeportal_fox social_backend
-  include_tasks: copy_lifeportal_fox_backend.yml
-  when: galaxy_manage_static_setup
+# - name: Include lifeportal_fox social_backend
+#   include_tasks: copy_lifeportal_fox_backend.yml
+#   when: galaxy_manage_static_setup
   
 - name: Insert fox image in managers py
   lineinfile:

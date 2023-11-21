@@ -245,8 +245,6 @@ galaxy_dirs:
 galaxy_config_files:
   - src: files/galaxy/config/datatypes_conf.xml
     dest: "{{ galaxy_root }}/config/datatypes_conf.xml"
-  - src: files/galaxy/config/oidc_backends_config.xml
-    dest: "{{ galaxy_root }}/config/oidc_backends_config.xml"
   - src: files/galaxy/config/oidc_config.xml
     dest: "{{ galaxy_root }}/config/oidc_config.xml"
   - src: files/galaxy/config/auth_conf.xml
@@ -266,6 +264,8 @@ galaxy_scripts_files:
 
 # -- Galaxy templates ---------------------------------------
 galaxy_config_templates:
+  - src: templates/galaxy/config/oidc_backends_config.xml.j2
+    dest: "{{ galaxy_root }}/config/oidc_backends_config.xml"
   - src: "templates/galaxy/scripts/drmaa_external_killer.py.j2"
     dest: "{{ galaxy_scripts_dir }}/drmaa_external_killer.py"
   - src: "templates/galaxy/scripts/drmaa_external_runner.py.j2"
