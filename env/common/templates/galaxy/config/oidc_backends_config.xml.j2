@@ -9,8 +9,7 @@ at the following page:
 
 
 
-Quick Reference
-_______________
+Quick Reference _______________
 
 - provider:         Sets the name of OpenID Connect (OIDC) Identity Provider (IdP).
                     The following IdPs are currently supported:
@@ -54,9 +53,9 @@ Please mind `http` and `https`.
 -->
 <OIDC>
     <provider name="LifeportalFox">
-        <client_id>{{ client_id }}/client_id>
-            <client_secret>{{ client_secret }}</client_secret>
-        <redirect_uri>https://{{ public_url }}/authnz/lifeportalfox/callback</redirect_uri>
+        <client_id>{{ client_id }}</client_id>
+        <client_secret>{{ client_secret }}</client_secret>
+        <redirect_uri>{{ public_url }}/authnz/lifeportalfox/callback</redirect_uri>
         <prompt>consent</prompt>
         <icon>https://www.usit.uio.no/bilder/fox_man2.png?vrtx=thumbnail</icon>
         <!-- (Optional) Extra scopes you need to request for your implementation -->
