@@ -20,6 +20,8 @@ galaxy_privsep_user: "{{ galaxy_user_name }}"
 
 galaxy_force_checkout: true
 
+galaxy_additional_venv_packages: ['total-perspective-vortex']
+
 ########################################################
 
 # Nginx
@@ -72,6 +74,8 @@ galaxy_oidc_backend_files_target_dir: "{{ galaxy_venv_dir }}/lib/python{{ galaxy
 # Paths to real user setup files
 galaxy_scripts_dir: "{{ galaxy_lifeportal_data_dir }}/scripts"
 galaxy_scripts_src_dir: files/galaxy/scripts
+
+galaxy_job_config_file: "{{ galaxy_config_dir }}/galaxy.yml"
 
 galaxy_config:
   galaxy:
@@ -134,13 +138,10 @@ galaxy_config:
     ## New feature
     object_store_store_by: uuid
 
-# --  Jobs Configuration ----------------------------------------
-
-    # SABRY's files from Lifeportal SAGA
-
-    job_config_file: "{{ tools_root }}/tool_config/lifeportal_job_conf.yml"
-    job_resource_params_file: "{{ tools_root }}/tool_config/lifeportal_job_resource_conf.xml"
+    # job_config_file: "{{ tools_root }}/tool_config/lifeportal_job_conf.yml"
+    job_config: "{{ galaxy_job_config }}"
     job_metrics_config_file: "{{ galaxy_root }}/server/config/job_metrics_conf.xml.sample"
+    job_resource_params_file: "{{ galaxy_config_dir }}/job_resource_params_conf.xml"
 
     # job_config_file: "{{ tools_root }}/tool_config/job_conf.xml"
     # job_resource_params_file:  "{{ tools_root }}/tool_config/job_resource_params_conf.xml"
@@ -228,8 +229,9 @@ galaxy_config:
         pools:
           - job-handlers
           - workflow-schedulers
-    
 
+# Galaxy Job Configuration is specified in env.yml
+#galaxy_job_config: "{{ galaxy_job_config }}"
 
 # -- Galaxy dirs ---------------------
 galaxy_dirs:
@@ -261,7 +263,7 @@ galaxy_config_files:
     dest: "{{ galaxy_root }}/config/auth_conf.xml"
   - src: files/galaxy/config/file_sources_conf.yml
     dest: "{{ galaxy_root }}/config/file_sources_conf.yml"
-
+      
 # -- OIDC backend items (files) ----------------------------------------
 galaxy_oidc_backend_files:
   - lifeportal_fox.py
@@ -282,7 +284,18 @@ galaxy_config_templates:
     dest: "{{ galaxy_scripts_dir }}/drmaa_external_runner.py"
   - src: templates/galaxy/scripts/external_chown_script.py.j2
     dest: "{{ galaxy_scripts_dir }}/external_chown_script.py"
+  - src: templates/galaxy/config/job_resource_params_conf.xml.j2
+    dest: "{{ galaxy_config.galaxy.job_resource_params_file }}"
+  - src: templates/galaxy/config/tpv_rules_local.yml
+    dest: "{{ tpv_mutable_dir }}/tpv_rules_local.yml"
 
+
+galaxy_extra_dirs:
+  - "{{ galaxy_config_dir }}/{{ tpv_config_dir_name }}"
+
+galaxy_extra_privsep_dirs:
+  - "{{ tpv_mutable_dir }}"
+tpv_privsep: true
 
 # -- LMOD activation scripts ----------------------------------------
 lmod_activation_scripts:
@@ -290,8 +303,8 @@ lmod_activation_scripts:
   - z01_StdEnv.sh
 #
 # #-- Dynamic Job Rules Files------------------------------
-galaxy_dynamic_job_rules:
-  - generate_slurm_job_params.py
+#galaxy_dynamic_job_rules:
+#  - generate_slurm_job_params.py
 
 
 # --  NGINX --------------

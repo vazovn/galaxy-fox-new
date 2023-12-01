@@ -70,7 +70,10 @@
      - role: galaxyproject.galaxy
        become: true
        become_user: "{{ galaxy_user_name }}"
-     # customized tasks
+     - role: usegalaxy_eu.tpv_auto_lint
+       become: true
+       become_user: "{{ galaxy_user_name }}"
+      # customized tasks
      - role: lifeportalfox.customized
        become: true
        become_user: "{{ galaxy_user_name }}"
