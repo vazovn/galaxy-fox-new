@@ -200,29 +200,33 @@ galaxy_config:
     virtualenv: "{{ galaxy_venv_dir }}"
     umask: '013'
     gunicorn:
-
-      enable: true
-
-      # listening options
-      bind: "unix:{{ gunicorn_dir }}/gunicorn.sock"
-      # performance options
-      workers: 2
-      # Other options that will be passed to gunicorn
-      # This permits setting of 'secure' headers like REMOTE_USER (and friends)
-      # https://docs.gunicorn.org/en/stable/settings.html#forwarded-allow-ips
-      extra_args: '--forwarded-allow-ips="*"'
-      # This lets Gunicorn start Galaxy completely before forking which is faster.
-      # https://docs.gunicorn.org/en/stable/settings.html#preload-app
-      preload: true
+      - bind: "unix:{{ gunicorn_dir }}/gunicorn0.sock"
+        enable: true
+        # listening options
+        # performance options
+        workers: 2
+        # Other options that will be passed to gunicorn
+        # This permits setting of 'secure' headers like REMOTE_USER (and friends)
+        # https://docs.gunicorn.org/en/stable/settings.html#forwarded-allow-ips
+        extra_args: '--forwarded-allow-ips="*" --max-requests 50000 --max-requests-jitter 10000'
+        timeout: 600
+        restart_timeout: 600
+        # This lets Gunicorn start Galaxy completely before forking which is faster.
+        # https://docs.gunicorn.org/en/stable/settings.html#preload-app
+        preload: true
+      - bind: "unix:{{ gunicorn_dir }}/gunicorn1.sock"
+        enable: true
+        workers: 2
+        extra_args: '--forwarded-allow-ips="*" --max-requests 50000 --max-requests-jitter 10000'
+        timeout: 600
+        restart_timeout: 600
+        preload: true
     celery:
-
       enable: true
       enable_beat: true
       queues: celery,galaxy.internal,galaxy.external
-
-      concurrency: 2
+      concurrency: 4
       loglevel: DEBUG
-
     handlers:
       handler:
         processes: 2
@@ -286,7 +290,7 @@ galaxy_config_templates:
     dest: "{{ galaxy_scripts_dir }}/external_chown_script.py"
   - src: templates/galaxy/config/job_resource_params_conf.xml.j2
     dest: "{{ galaxy_config.galaxy.job_resource_params_file }}"
-  - src: templates/galaxy/config/tpv_rules_local.yml
+  - src: templates/galaxy/config/tpv/tpv_rules_local.yml
     dest: "{{ tpv_mutable_dir }}/tpv_rules_local.yml"
 
 
