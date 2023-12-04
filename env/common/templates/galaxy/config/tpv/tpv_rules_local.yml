@@ -6,16 +6,15 @@ tools:
     abstract: true
     cores: 1
     mem: cores * 4
-    params:
-      walltime: 8
-      rules:
-        - id: resource_params_defined
-          if: |
-            param_dict = job.get_param_values(app)
-            param_dict.get('__job_resource', {}).get('__job_resource__select') == 'yes'
-          params:
-            project: "{str(job.get_param_values(app)['__job_resource']['project'])}"
-      
+    walltime: 8
+    rules:
+      - id: resource_params_defined
+        if: |
+          param_dict = job.get_param_values(app)
+          param_dict.get('__job_resource', {}).get('__job_resource__select') == 'yes'
+        params:
+          walltime: "{str(job.get_param_values(app)['__job_resource']['project'])}"
+
   .*testing.*:
     cores: 2
     mem: cores * 4
@@ -27,13 +26,6 @@ tools:
           # last line in block must evaluate to a value - which determines whether the TPV if conditional matches or not
           not user or user.email not in admin_users
         fail: Unauthorized. Only admins can execute this tool.
-      - id: resource_params_defined
-        if: |
-          param_dict = job.get_param_values(app)
-          param_dict.get('__job_resource', {}).get('__job_resource__select') == 'yes'
-        cores: int(job.get_param_values(app)['__job_resource']['cores'])
-        params:
-          walltime: "{int(job.get_param_values(app)['__job_resource']['time'])}"
 
 destinations:
   local_env:
@@ -44,8 +36,8 @@ destinations:
       tmp_dir: true
   singularity:
     runner: local_runner
-    max_accepted_cores: 2
-    max_accepted_mem: 2
+    max_accepted_cores: 1
+    max_accepted_mem: 1
     params:
       singularity_enabled: true
       singularity_volumes: "{{ galaxy_lifeportal_data_dir }}:ro,$galaxy_root:ro,$tool_directory:ro,$working_directory:rw,$job_directory:rw,/cvmfs/:ro"
@@ -71,4 +63,5 @@ destinations:
     # max_cores: 64
     # max_mem: 256
     params:
-      native_specification: --nodes=1 --ntasks=1 --cpus-per-task={cores} --mem={mem} --time={params['walltime']}:00:00 --account={params['project']}
+      #native_specification: --nodes=1 --ntasks=1 --cpus-per-task={cores} --mem={mem} --time={params['walltime']}:00:00 --account={params['project']}
+      native_specification: --nodes=1 --partition=normal --ntasks=1 --cpus-per-task={cores} --mem={mem} --account={params['project']}
