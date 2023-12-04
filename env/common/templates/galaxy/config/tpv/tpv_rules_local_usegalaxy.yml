@@ -1,0 +1,1504 @@
+---
+
+# NOTE: Where it makes sense, try to use memory values that are just under JS2 instance sizes:
+# - m3.tiny: 1c, 2.7G (2840M = 2.77G)
+# - m3.small: 2c, 5.6G (5900M = 5.76G)
+# - m3.quad: 4c, 14.0G (14800M = 14.45G)
+# - m3.medium: 8c, 28.0G (29900M = 29.20G)
+# - m3.large: 16c, 58.0G (60100M = 58.69G)
+# - m3.xl: 32c, 120G (125000M = 122.07G)
+
+# Anything larger will go to HPC:
+# - bridges2 (shared): 16c-64c, 64G-128G, actual cores allocated = {int(mem/2)}, $GALAXY_SLOTS set to {cores}, $GALAXY_MEMORY_MB set to {int(mem*1024)}
+# - expanse (shared): 16c-64c, 64G-128G, actual cores allocated = {int(mem/2)}, $GALAXY_SLOTS set to {cores}, $GALAXY_MEMORY_MB set to {int(mem*1024)}
+# - bridges2 (exclusive): 64c-128c, 128G-250G, actual cores allocated = 128, actual mem allocated = 250G, $GALAXY_SLOTS set to {cores}, $GALAXY_MEMORY_MB set to {int(mem*1024)}
+# - expanse (exclusive): 64c-128c, 128G-250G, actual cores allocated = 128, actual mem allocated = 250G, $GALAXY_SLOTS set to {cores}, $GALAXY_MEMORY_MB set to {int(mem*1024)}
+# - rockfish (shared): 16c-48c, 64G-192G, actual cores allocated = {cores}, actual mem allocated = {int(mem)}, $GALAXY_SLOTS set to {cores}, $GALAXY_MEMORY_MB set to {int(mem*1024)}
+# - stampede2-skx (exclusive): 16c-96c, 96G-190G, actual cores allocated = 96, actual mem allocated = 190G, $GALAXY_SLOTS set to {cores}, $GALAXY_MEMORY_MB set to 190000, no clamping
+# - stampede2-icx (exclusive): 32-160c, 128G-250G, actual cores allocated = 160, actual mem allocated = 250G, $GALAXY_SLOTS set to {cores}, $GALAXY_MEMORY_MB set to 254000
+
+tools:
+
+  # abstract tools for inheritance
+
+  _conda_local:
+    abstract: true
+    # https://github.com/galaxyproject/total-perspective-vortex/issues/118
+    #inherits: ''
+    scheduling:
+      require:
+      - conda
+      reject:
+      - singularity
+      - hpc
+      - pulsar
+      - offline
+
+  _galaxy_lib:
+    # NOTE: changes here need to be reflected in the rules on the default tool
+    abstract: true
+    #inherits: ''
+    params:
+      container_override:
+      - type: singularity
+        shell: /bin/sh
+        identifier: /cvmfs/singularity.galaxyproject.org/all/centos:8.3.2011
+    env:
+    - name: SINGULARITYENV_PREPEND_PATH
+      value: $GALAXY_VIRTUAL_ENV/bin
+    - name: SINGULARITYENV_PYTHONPATH
+      value: $GALAXY_LIB
+    scheduling:
+      require:
+      - singularity
+      reject:
+      - hpc
+
+  _galaxy_lib_local:
+    abstract: true
+    inherits: _galaxy_lib
+    scheduling:
+      reject:
+      - pulsar
+
+  _legacy:
+    abstract: true
+    params:
+      container_override:
+      - type: singularity
+        shell: /bin/bash
+        resolve_dependencies: true
+        identifier: /cvmfs/main.galaxyproject.org/singularity/usegalaxy.org-legacy-environment--0
+    scheduling:
+      require:
+      - singularity
+      reject:
+      - hpc
+      - offline
+
+  _legacy_local:
+    abstract: true
+    inherits: _legacy
+    scheduling:
+      reject:
+      - pulsar
+
+  _singularity_resolv_fix:
+    abstract: true
+    params:
+      # this doesn't override dest params
+      #singularity_no_mount: tmp
+      singularity_run_extra_arguments: --no-mount=tmp
+    env:
+    - name: SINGULARITY_BIND
+      value: /etc/pki:/etc/pki:ro,/etc/ssl:/etc/ssl::ro
+
+  _hpc:
+    abstract: true
+    #inherits: _default
+    scheduling:
+      accept:
+      - pulsar
+      require:
+      - hpc
+
+  # test tools
+
+  #echo: {scheduling: {require: [jetstream2]}}
+
+  # non-singularity non-pulsar tools
+
+  upload1: {inherits: _conda_local}
+  __DATA_FETCH__:
+    inherits: _conda_local
+    mem: 5.6
+  #__.*__: {inherits: _conda_local}
+  __SET_METADATA__: {inherits: _conda_local}
+  export_remote: {inherits: _conda_local}
+
+  # galaxy lib tools in singularity
+
+  # TODO: PR to GALAXY_LIB_TOOLS*
+  MAF_Thread_For_Species1: {inherits: _galaxy_lib}
+  MAF_To_BED1: {inherits: _galaxy_lib}
+  maf_limit_size1: {inherits: _galaxy_lib}
+  # this is in GALAXY_LIB_TOOLS_VERSIONED but it was not actually fixed until +galaxy1
+  toolshed.g2.bx.psu.edu/repos/iuc/interval2maf/Interval2Maf1/1.0.1\+galaxy0: {inherits: _galaxy_lib}
+
+  # galaxy lib tools in singularity, non-pulsar
+
+  # this is in GALAXY_LIB_TOOLS so the rule will already have applied _galaxy_lib
+  MAF_To_Interval1: {scheduling: {reject: [pulsar]}}
+
+  # framework tools without requirement tags (as of 23.1)
+
+  addValue:
+    params:
+      container_override: [{type: singularity, shell: '/bin/sh', identifier: "/cvmfs/singularity.galaxyproject.org/all/perl:5.26.2"}]
+  # there are both a framework and a TS version
+  toolshed.g2.bx.psu.edu/repos/devteam/add_value/addValue/.*:
+    inherits: addValue
+
+  Paste1:
+    params:
+      # coreutils=8.25,perl=5.22.0.1
+      container_override: [{type: singularity, shell: '/bin/bash', identifier: "/cvmfs/singularity.galaxyproject.org/all/mulled-v2-c5660771860859a51697ce13d5d74251dc4c8eb6:254c9751502b0d56aa64890243ee9ebd88e94048-0"}]
+
+  _perl_5_26_2:
+    params:
+      container_override: [{type: singularity, shell: '/bin/sh', identifier: "/cvmfs/singularity.galaxyproject.org/all/perl:5.26.2"}]
+  Remove beginning1: {inherits: _perl_5_26_2}
+  Condense characters1: {inherits: _perl_5_26_2}
+  createInterval: {inherits: _perl_5_26_2}
+  Cut1: {inherits: _perl_5_26_2}
+  ChangeCase: {inherits: _perl_5_26_2}
+  hgv_david: {inherits: _perl_5_26_2}
+  hgv_linkToGProfile: {inherits: _perl_5_26_2}
+  master2pgSnp: {inherits: _perl_5_26_2}
+
+  Extract_features1:
+    params:
+      container_override: [{type: singularity, shell: '/bin/sh', identifier: "/cvmfs/singularity.galaxyproject.org/all/bx-python:0.8.9--py38hb90e610_2"}]
+  comp1:
+    params:
+      # python=3.7,coreutils=8.30
+      container_override: [{type: singularity, shell: '/bin/sh', identifier: "/cvmfs/singularity.galaxyproject.org/all/mulled-v2-879928bcdd8adc5b4660a3f6de3703d7c7861de4:6ce96688844d469d84f94fabb34055d8dfa283c7-0"}]
+
+  # real tools
+
+  # NOTE: any tools that increase cores but do not set mem will use the default mem multiplier of cores * 2.89G
+
+  hgv_ldtools:
+    # copies ldtools_wrapper.sh without +x so can't be executed
+    scheduling:
+      reject:
+      - pulsar
+
+  wig_to_bigWig:
+    # supposedly 1.5x for  wig, 1.25x for bedgraph: https://genome.ucsc.edu/goldenPath/help/bigWig.html
+    # but that doesn't explain <1GB inputs taking >20GB of mem. ultimately, the 99th percentile runtime of this tool is
+    # 8 minutes, so it's not going to hurt that much to overallocate
+    context:
+      # TODO: make this work
+      time: 00:02:00
+    mem: min(max(input_size * 20, 28), 58)
+  CONVERTER_wig_to_bigwig: {inherits: wig_to_bigWig}
+
+  toolshed.g2.bx.psu.edu/repos/bgruening/diffbind/diffbind/.*:
+    mem: 14
+
+  toolshed.g2.bx.psu.edu/repos/bgruening/trim_galore/trim_galore/.*:
+    cores: 5
+    rules:
+    - id: trim_galore_small_input_rule
+      if: input_size < 0.02
+      cores: 1
+    - id: trim_galore_medium_input_rule
+      if: 0.02 <= input_size < 0.2
+      cores: 3
+
+  toolshed.g2.bx.psu.edu/repos/bgruening/uniprot_rest_interface/uniprot/0.[234]:
+    inherits: _singularity_resolv_fix
+    # copies uniprot.py without +x so can't be executed
+    scheduling:
+      reject:
+      - pulsar
+
+  toolshed.g2.bx.psu.edu/repos/devteam/cd_hit_dup/cd_hit_dup/.*:
+    mem: 5.7
+
+  toolshed.g2.bx.psu.edu/repos/devteam/emboss_5/[^/]*/5\..*:
+    mem: 5.7
+
+  toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/.*:
+    cores: 8
+    rules:
+    - id: fastqc_tiny_input_rule
+      if: input_size < 0.001
+      cores: 1
+    - id: fastqc_small_input_rule
+      if: 0.001 <= input_size < 0.1
+      cores: 2
+    - id: fastqc_medium_input_rule
+      if: 1 <= input_size < 2
+      cores: 4
+
+  toolshed.g2.bx.psu.edu/repos/devteam/flanking_features/flanking_features_1/.*:
+    # was 16 in the job router but let's try this
+    mem: 8
+
+  toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/get_species_taxids/2.10.1.*:
+    inherits: _singularity_resolv_fix
+
+  toolshed.g2.bx.psu.edu/repos/devteam/varscan_version_2/varscan/.*:
+    # was 16 in the job router but let's try this
+    mem: 8
+
+  toolshed.g2.bx.psu.edu/repos/iuc/annotatemyids/annotatemyids/.*:
+    mem: 5.6
+
+  # toolshed.g2.bx.psu.edu/repos/iuc/bedtools/.* in tools_pre_shared.yaml
+
+  toolshed.g2.bx.psu.edu/repos/iuc/bedtools/bedtools_coveragebed/.*:
+    mem: 14
+
+  toolshed.g2.bx.psu.edu/repos/iuc/collection_column_join/collection_column_join/.*:
+    # was 16 in the job router but let's try this
+    mem: 8
+
+  toolshed.g2.bx.psu.edu/repos/iuc/dada2_assigntaxonomyaddspecies/dada2_assignTaxonomyAddspecies/.*:
+    cores: 4
+    mem: 14
+
+  toolshed.g2.bx.psu.edu/repos/iuc/dada2_dada/dada2_dada/.*:
+    cores: 4
+    mem: 14
+
+  toolshed.g2.bx.psu.edu/repos/iuc/dada2_filterandtrim/dada2_filterAndTrim/.*:
+    cores: 4
+    mem: 14
+
+  toolshed.g2.bx.psu.edu/repos/iuc/datamash_transpose/datamash_transpose/1.8\+galaxy0:
+    # https://github.com/galaxyproject/tools-iuc/issues/5621
+    scheduling:
+      reject:
+      - pulsar
+
+  toolshed.g2.bx.psu.edu/repos/iuc/deepvariant/deepvariant/.*:
+    cores: int(min(max(input_size * 4, 14), 250) / 4)
+    mem: int(min(max(input_size * 4, 14), 250))
+
+  toolshed.g2.bx.psu.edu/repos/iuc/ebi_metagenomics_run_downloader/ebi_metagenomics_run_downloader/0.1.0:
+    inherits: _singularity_resolv_fix
+    # copies download_ebi_metagenomics_run_data without +x so can't be executed
+    scheduling:
+      reject:
+      - pulsar
+
+  toolshed.g2.bx.psu.edu/repos/iuc/gemini_load/gemini_load/.*:
+    # TODO: this should be higher but then it would be excluded from roundup
+    cores: 4
+    mem: 32
+    # Databases on Corral
+    scheduling:
+      reject:
+      - pulsar
+
+  toolshed.g2.bx.psu.edu/repos/iuc/genrich/genrich/.*:
+    mem: min(max(input_size * 10, mem_factor), 14)
+
+  toolshed.g2.bx.psu.edu/repos/iuc/ggplot2_heatmap2/ggplot2_heatmap2/.*:
+    # shared DB uses 24, AU uses 7.6, we had configured 16, stick with 16
+    mem: 14
+
+  toolshed.g2.bx.psu.edu/repos/iuc/maker/maker/.*:
+    # WARNING: Temporary directory set to an NFS location.
+    # TMP=/corral4/main/jobs/043/126/43126138/_job_tmp
+    # The temporary directory in MAKER is specifically for
+    # operations that are not NFS-safe, but you have chosen
+    # to ignore this error. If you experience seemly random
+    # freezing and failures, the TMP directory is the cause.
+    env:
+    - name: TEMP
+      value: /tmp
+
+  toolshed.g2.bx.psu.edu/repos/iuc/snpeff/snpEff_build_gb/4.3\+T.galaxy[1-5]:
+    # https://github.com/galaxyproject/tools-iuc/issues/5647, fixed in .galaxy6
+    cores: 1
+    mem: 48
+    scheduling:
+      require:
+      - roundup-mem
+
+  toolshed.g2.bx.psu.edu/repos/iuc/tximport/tximport/.*:
+    mem: 8
+
+  toolshed.g2.bx.psu.edu/repos/iuc/variant_analyzer/read2mut/.*:
+    # was 16 in the job router but let's try this
+    mem: 8
+
+  toolshed.g2.bx.psu.edu/repos/iuc/vsearch/vsearch_[^/]*/2\..*:
+    # uses cpu instructions not present on roundup
+    scheduling:
+      reject:
+      - roundup
+
+  toolshed.g2.bx.psu.edu/repos/nick/dunovo/align_families/.*:
+    cores: 8
+    mem: 28
+    # TODO: test to make sure this gets set
+    context:
+      time: "192:00:00"
+
+  toolshed.g2.bx.psu.edu/repos/nml/metaspades/metaspades/.*:
+    # shared DB has 10 cores and 250 GB(!)
+    cores: 16
+    mem: 58
+    rules:
+    - id: metaspades_small_input_rule
+      if: input_size < 0.05
+      cores: 2
+      mem: 5.6
+    - id: metaspades_medium_input_rule
+      if: 0.05 <= input_size < 1
+      cores: 8
+      mem: 28
+    - id: metaspades_fail_rule
+      if: input_size >= 60
+      fail: Too much data, please don't use Spades for this
+
+  # TODO: sort stuff below here
+
+  toolshed.g2.bx.psu.edu/repos/galaxy-australia/alphafold2/alphafold/.*:
+    gpus: 1
+    cores: 12
+    # mem uses --mem-per-cpu=4G so this isn't actually used, we just set it for min_accepted_mem
+    mem: 48
+    params:
+      require_container: true
+      container_override:
+        - type: singularity
+          shell: /bin/bash
+          resolve_dependencies: false
+          identifier: /scratch4/mschatz1/ndc/alphafold_sandbox
+    env:
+    - name: SINGULARITYENV_ALPHAFOLD_AA_LENGTH_MIN
+      value: "16"
+    - name: SINGULARITYENV_ALPHAFOLD_AA_LENGTH_MAX
+      value: "3000"
+    - name: SINGULARITYENV_ALPHAFOLD_DB
+      value: /cvmfs/data.galaxyproject.org/byhand/alphafold
+    rules:
+    - id: alphafold_allow_rule
+      if: |
+        user and 'AlphaFold' in [role.name for role in user.all_roles() if not role.deleted]
+      scheduling:
+        require:
+        - rockfish-gpu
+    - id: alphafold_deny_rule
+      if: |
+        not user or not any([
+          role for role in user.all_roles() if (
+            role.name in ['AlphaFold'] and not role.deleted
+        )])
+      fail: |
+        This tool is currently being beta-tested on GPUs and your account has not been given access.
+
+  # https://github.com/bioconda/bioconda-recipes/pull/41091
+  #   mulled-build --singularity --test "QT_QPA_PLATFORM='offscreen' Bandage --version" build-and-test bandage_ng=2022.09
+  toolshed.g2.bx.psu.edu/repos/iuc/bandage/bandage_image/2022.09.*:
+    mem: 14
+    params:
+      container_override: [{type: singularity, shell: '/bin/sh', identifier: "/cvmfs/main.galaxyproject.org/singularity/bandage_ng:2022.09--0"}]
+    env:
+    - name: SINGULARITYENV_QT_QPA_PLATFORM
+      value: offscreen
+
+  toolshed.g2.bx.psu.edu/repos/iuc/bandage/bandage_info/2022.09.*:
+    inherits: toolshed.g2.bx.psu.edu/repos/iuc/bandage/bandage_image/2022.09.*
+
+  toolshed.g2.bx.psu.edu/repos/iuc/meryl/meryl/.*:
+    # 24 cores in the shared db
+    # 130 in the shared DB, this prevents us from wasting most of an m3.2xl.
+    mem: 120
+    env:
+    # suppress 'tar: read-db.meryl: file changed as we read it' warning and non-zero exit code
+    - name: SINGULARITY_BIND
+      value: /jetstream2/scratch/main/nate/wraptar:/usr/local/sbin/tar:ro
+    rules:
+    - id: meryl_small_input_rule
+      if: input_size < 0.001
+      cores: 2
+      mem: 5.6
+    - id: meryl_medium_input_rule
+      if: 0.001 <= input_size < 5
+      cores: 16
+      mem: 58
+    scheduling:
+      require:
+      - jetstream2
+
+  toolshed.g2.bx.psu.edu/repos/chemteam/gmx_sim/gmx_sim/.*:
+    gpus: 0.2
+    cores: 4
+    mem: 14
+    scheduling:
+      require:
+      - gpu
+      - pulsar
+
+  toolshed.g2.bx.psu.edu/repos/iuc/spades_plasmidspades/spades_plasmidspades/.*:
+    # TODO: shared db uses 10/250, but our min for HPC is 16
+    cores: 16
+    mem: 244
+
+  toolshed.g2.bx.psu.edu/repos/iuc/trinity/trinity/.*:
+    cores: 24
+    # TODO: shared db uses 512, AU uses 961 but caps inputs at 30
+    mem: 244
+    scheduling:
+      prefer:
+      - expanse
+    rules:
+      - id: trinity_tiny_input_rule
+        if: input_size < 0.1
+        cores: 1
+        mem: 2.7
+      - id: trinity_small_input_rule
+        if: 0.1 <= input_size < 1
+        cores: 8
+        mem: 58
+      - id: trinity_medium_input_rule
+        if: 1 <= input_size < 4
+        cores: 16
+        mem: 120
+      - id: trinity_large_input_rule
+        if: 4 <= input_size < 8
+        cores: 20
+        mem: 186
+      - id: trinity_fail_rule
+        if: input_size >= 80
+        fail: |
+          Too much data, we cannot support such large Trinity assemblies with our
+          backend. Please use another server for your job.
+
+  toolshed.g2.bx.psu.edu/repos/bgruening/flye/flye/.*:
+    cores: 2
+    rules:
+    - if: input_size < 0.5
+      cores: 4
+      mem: 12
+      scheduling:
+        accept:
+        - general
+        reject:
+        - hpc
+    - if: 0.5 <= input_size < 10
+      cores: 30
+      mem: 80
+    - if: input_size >= 10
+      # from AU
+      #cores: 120
+      #mem: 1922
+      cores: 56
+      mem: 94
+
+  toolshed.g2.bx.psu.edu/repos/iuc/busco/busco/.*:
+    # busco fails miserably on Stampede2 (all partitions) with a variety of multiprocessing-related errors
+    cores: 20
+    mem: 58
+    env:
+    # prevent premature removal of untarred busco DBs
+    - name: SINGULARITYENV_TAR_OPTIONS
+      value: -m
+    scheduling:
+      reject:
+      - stampede2
+
+  toolshed.g2.bx.psu.edu/repos/devteam/bowtie2/bowtie2/.*:
+    cores: 8
+    mem: 28
+    rules:
+    - id: bowtie2_small_input_rule
+      if: input_size < 0.1
+      cores: 2
+      mem: 5.6
+    - id: bowtie2_medium_input_rule
+      if: 0.1 <= input_size < 2
+      cores: 4
+      mem: 14
+
+  toolshed.g2.bx.psu.edu/repos/devteam/bwa/bwa/.*:
+    cores: 8
+    mem: 28
+    rules:
+    - id: bwa_small_input_rule
+      if: input_size < 0.25
+      cores: 2
+      mem: 5.6
+    - id: bwa_medium_input_rule
+      if: 0.25 <= input_size < 1
+      cores: 4
+      mem: 14
+
+  toolshed.g2.bx.psu.edu/repos/devteam/bwa/bwa_mem/.*:
+    cores: 32
+    mem: 120
+    scheduling:
+      require:
+      - jetstream2
+    rules:
+    - id: bwa_mem_small_input_rule
+      if: input_size < 0.1
+      cores: 2
+      mem: 5.6
+    - id: bwa_mem_medium_input_rule
+      if: 0.1 <= input_size < 1
+      cores: 4
+      mem: 14
+    - id: bwa_mem_medium2_input_rule
+      if: 1 <= input_size < 20
+      cores: 8
+      mem: 28
+
+  toolshed.g2.bx.psu.edu/repos/iuc/bwa_mem2/bwa_mem2/.*:
+    cores: 32
+    mem: 120
+    scheduling:
+      require:
+      - jetstream2
+    rules:
+    - id: bwa_mem2_small_input_rule
+      if: input_size < 0.1
+      cores: 2
+      mem: 5.6
+    - id: bwa_mem2_medium_input_rule
+      if: 0.1 <= input_size < 16
+      cores: 8
+      mem: 28
+    - id: bwa_mem2_large_input_rule
+      if: 16 <= input_size < 32
+      cores: 16
+      mem: 58
+    - id: bwa_mem2_history_reference_rule
+      if: |
+        helpers.job_args_match(job, app, {"reference_source": {"reference_source_selector": "history"}})
+      # per https://github.com/bwa-mem2/bwa-mem2/issues/41 it's 28 * reference
+      mem: |
+        options = job.get_param_values(app)
+        size = options["reference_source"]["ref_file"].get_size()
+        min(max(size/1024**3 * 28, (input_size - float(size/1024**3)) * 2, 7.6), 120)
+
+  toolshed.g2.bx.psu.edu/repos/iuc/hisat2/hisat2/.*:
+    cores: 32
+    mem: 120
+    rules:
+    - id: hisat2_small_input_rule
+      if: input_size < 0.5
+      cores: 2
+      mem: 5.6
+    - id: hisat2_medium_input_rule
+      if: 0.5 <= input_size < 15
+      cores: 8
+      mem: 28
+    - id: hisat2_large_input_rule
+      if: 15 <= input_size < 30
+      cores: 16
+      mem: 58
+
+  toolshed.g2.bx.psu.edu/repos/bgruening/hifiasm/hifiasm/.*:
+    cores: 64
+    mem: 496
+    context:
+      time: 48:00:00
+    rules:
+    - id: hifiasm_small_input_rule
+      if: input_size < 1
+      cores: 2
+      mem: 5.6
+    - id: hifiasm_medium_input_rule
+      if: 1 <= input_size < 16
+      cores: 8
+      mem: 28
+    - id: hifiasm_large_input_rule
+      if: 16 <= input_size < 32
+      cores: 16
+      mem: 58
+    - id: hifiasm_xlarge_input_rule
+      if: 32 <= input_size < 64
+      cores: 32
+      mem: 120
+    - id: hifiasm_xxlarge_input_rule
+      if: 64 <= input_size < 128
+      cores: 64
+      mem: 244
+
+
+  toolshed.g2.bx.psu.edu/repos/devteam/kraken/kraken/.*:
+    cores: 20
+    mem: 20
+    scheduling:
+      require:
+      - cvmfs
+
+  # TODO: rule to set mem based on database size, see job router
+  toolshed.g2.bx.psu.edu/repos/iuc/kraken2/kraken2/.*:
+    cores: 40
+    mem: 140
+    scheduling:
+      require:
+      - cvmfs
+
+  toolshed.g2.bx.psu.edu/repos/iuc/abyss/abyss-pe/.*:
+    cores: 90
+    mem: 120
+    scheduling:
+    rules:
+    - id: abyss-pe_small_input_rule
+      if: input_size < 0.002
+      cores: 2
+      mem: 5.6
+    - id: abyss-pe_medium_input_rule
+      if: 0.002 <= input_size < 5
+      cores: 32
+      mem: 94
+
+    # TODO: reject over a certain input size, what is that input size?
+
+  toolshed.g2.bx.psu.edu/repos/nml/spades/spades/.*:
+    cores: 60
+    mem: 244
+    rules:
+    - id: spades_small_input_rule
+      if: input_size < 0.005
+      cores: 2
+      mem: 5.6
+    - id: spades_medium_input_rule
+      if: 0.005 <= input_size < 2
+      cores: 8
+      mem: 28
+    - id: spades_fail_rule
+      if: input_size >= 25
+      fail: "Too much data for this public service, please input fewer reads. Example method: SeqTk subsample"
+
+  toolshed.g2.bx.psu.edu/repos/iuc/unicycler/unicycler/.*:
+    cores: 24
+    mem: 80
+    rules:
+    - id: unicycler_small_input_rule
+      if: input_size < 0.05
+      cores: 1
+      mem: 2.7
+    - id: unicycler_medium_input_rule
+      if: 0.05 <= input_size < 2
+      cores: 8
+      mem: 28
+
+  toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_blastn_wrapper/.*:
+    cores: 4
+    mem: 14
+    rules:
+    - id: ncbi_blastn_wrapper_db_rule
+      if: |
+        helpers.job_args_match(job, app, {'db_opts': {'db_opts_selector': 'db'}})
+      cores: 24
+      mem: 80
+    # 2023-11-02 getting this on Expanse, even after clearing Singualrity and CVMFS caches:
+    # /usr/local/bin/blastn: error while loading shared libraries: /usr/local/bin/../lib/ncbi-blast+/libblastinput.so: cannot read file data: Input/output error
+    scheduling:
+      reject:
+      - expanse
+  toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_blastp_wrapper/.*:
+    inherits: toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_blastn_wrapper/.*
+  toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_blastx_wrapper/.*:
+    cores: 24
+    mem: 80
+    scheduling:
+      reject:
+      - expanse
+  toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_rpsblast_wrapper/.*:
+    inherits: toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_blastx_wrapper/.*
+  toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_tblastn_wrapper/.*:
+    inherits: toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_blastn_wrapper/.*
+  toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_tblastx_wrapper/.*:
+    inherits: toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_blastx_wrapper/.*
+
+  toolshed.g2.bx.psu.edu/repos/bgruening/bionano_scaffold/bionano_scaffold/.*:
+    cores: 24
+    mem: 250
+
+  toolshed.g2.bx.psu.edu/repos/bgruening/gfastats/gfastats/.*:
+    cores: 4
+    mem: 14
+
+  toolshed.g2.bx.psu.edu/repos/lparsons/htseq_count/htseq_count/.*:
+    rules:
+    - id: htseq_count_small_input_rule
+      if: input_size < 0.2
+      mem: 2.7
+    - id: htseq_count_medium_input_rule
+      if: 0.2 <= input_size < 10
+      mem: 20
+
+  # local test tools
+
+  ncbi_fcs_gx:
+    scheduling:
+      require:
+      - resize-shm
+      - jetstream2
+      - pulsar
+
+  verkko:
+    cores: 32
+    mem: 120
+
+  # legacy conda-in-singularity non-pulsar tools
+
+  # TODO: some due to https://github.com/galaxyproject/pulsar/issues/341, retest after fix
+
+  toolshed.g2.bx.psu.edu/repos/boris/getalleleseq/getalleleseq/0.0.1: {inherits: _legacy_local}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_grep_tool/1.1.0: {inherits: _legacy_local}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_grep_tool/1.1.1: {inherits: _legacy_local}
+  toolshed.g2.bx.psu.edu/repos/iuc/dropletutils/dropletutils/1\.2\.1.*: {inherits: _legacy_local}
+  toolshed.g2.bx.psu.edu/repos/iuc/dropletutils/dropletutils/1\.10\.0.*: {inherits: _legacy_local}
+
+  # legacy conda-in-singularity tools
+
+  toolshed.g2.bx.psu.edu/repos/arkarachai-fungtammasan/str_fm/GenotypeSTR/2.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/arkarachai-fungtammasan/str_fm/Profilegenerator/2.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/arkarachai-fungtammasan/str_fm/combineproballelecom/2.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/arkarachai-fungtammasan/str_fm/fetchflank/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/arkarachai-fungtammasan/str_fm/heteroprob/2.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/arkarachai-fungtammasan/str_fm/microsatcompat/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/arkarachai-fungtammasan/str_fm/microsatellite/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/arkarachai-fungtammasan/str_fm/microsatpurity/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/arkarachai-fungtammasan/str_fm/readdepth2seqdepth/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/arkarachai-fungtammasan/str_fm/space2underscore_readname/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/deeptools_[^/]*/deeptools_[^/]*/2.3.5.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/deeptools_[^/]*/deeptools_[^/]*/2.5.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/deeptools_[^/]*/deeptools_[^/]*/3.0.2.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/ml_visualization_ex/ml_visualization_ex/1.0.7.12: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/model_prediction/model_prediction/1.0.8.[12]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/sailfish/sailfish/0.7.6.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_cat/0.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_cut_tool/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_easyjoin_tool/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_easyjoin_tool/1.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_find_and_replace/1.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_head_tool/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_multijoin_tool/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_multijoin_tool/1.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_sed_tool/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_sort_header_tool/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_sorted_uniq/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_tac/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_tail_tool/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_text_file_with_recurring_lines/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_unfold_column_tool/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_uniq_tool/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_sort_rows/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_sort_rows/1.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/blankenberg/naive_variant_caller/naive_variant_caller/0.0.[12]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/boris/phylorelatives/phylorelatives/0.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/crs4/prokka/prokka/1.1[23].*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/crs4/taxonomy_krona_chart/taxonomy_krona_chart/2.[06].*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bamleftalign/bamleftalign/0.0.2: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bamtools/bamtools/0.0.[12]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bamtools_filter/bamFilter/0.0.[12]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bamtools_split/bamSplit/0.0.[12]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bowtie_color_wrappers/bowtie_color_wrapper/1.1.2: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bowtie_wrappers/bowtie_wrapper/1.1.2: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bowtie2/bowtie2/0\.[234]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bowtie2/bowtie2/2\.2\.6.*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bwa/bwa(_mem)?/0\.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bwa/bwa(_mem)?/0\.4\.2: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bwa/bwa(_mem)?/0\.7\.12\.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bwa_wrappers/bwa_color_wrapper/1.0.2: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/bwa_wrappers/bwa_wrapper/1.2.3: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/cd_hit_dup/cd_hit_dup/0.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/clustalw/clustalw/0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/cluster/gops_cluster_1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/complement/gops_complement_1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/concat/gops_concat_1/1.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/coverage/gops_coverage_1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/cuff[^/]*/cuff[^/]*/0.0.[567]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/cuffdiff/cuffdiff/2.2.1.[123]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/cufflinks/cufflinks/2.2.1.2: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/cummerbund_to_tabular/cummerbund_to_cuffdiff/1.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/divide_pg_snp/dividePgSnp/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastq_to_fasta/cshl_fastq_to_fasta/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastq_to_tabular/fastq_to_tabular/1.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.[56].*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.71: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastqtofasta/fastq_to_fasta_python/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/find_diag_hits/find_diag_hits/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/freebayes/bamleftalign/0.4: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/freebayes_wrapper/freebayes_wrapper/0.5.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/freebayes/freebayes/0\..*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/freebayes/freebayes/1.0.2.29-3: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/generate_pc_lda_matrix/generate_matrix_for_pca_and_lda1/1.0.0: {inherits: _legacy}
+  "toolshed.g2.bx.psu.edu/repos/devteam/gi2taxonomy/Fetch Taxonomic Ranks/1.1.0": {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/histogram/histogram_rpy/1.0.[34]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/indels_3way/indels_3way/1.0.3: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/kernel_canonical_correlation_analysis/kcca1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/kernel_principal_component_analysis/kpca1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/kraken2tax/Kraken2Tax/1.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/lca_wrapper/lca1/1.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/lda_analysis/lda_analy1/1.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/linear_regression/LinearRegression1/1.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/megablast_xml_parser/megablast_xml_parser/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/microsats_alignment_level/microsats_align1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/microsats_mutability/microsats_mutability1/1.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/mine/maximal_information_based_nonparametric_exploration/0.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/mutate_snp_codon/mutate_snp_codon_1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/partialr_square/partialRsq/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/picard/picard_[^/]*/1.1[23]6.[01]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/plot_from_lda/plot_for_lda_output1/1.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/poisson2test/poisson2test/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/principal_component_analysis/pca1/1.0.2: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/rcve/rcve1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/sam_bitwise_flag_filter/sam_bw_filter/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/sam_pileup/sam_pileup/1.1.3: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/sam_to_bam/sam_to_bam/1.1.3: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/sam2interval/sam2interval/1.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/samtools_slice_bam/samtools_slice_bam/0.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/short_reads_trim_seq/trim_reads/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/snpfreq/hgv_snpFreq/1.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/subtract/gops_subtract_1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/subtract_query/subtract_query1/0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/t2ps/Draw_phylogram/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/t2t_report/t2t_report/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/t_test_two_samples/t_test_two_samples/1.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/table_recalibration/gatk_table_recalibration/0.0.5: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/tabular_to_fasta/tab2fasta/1.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/tabular_to_fastq/tabular_to_fastq/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/tophat/tophat/1.5.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/tophat2/tophat2/0\..*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/tophat2/tophat2/2.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/tophat_fusion_post/tophat_fusion_post/0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/ucsc_custom_track/build_ucsc_custom_track_1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/varscan_version_2/varscan/0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/vcf[^/]*/vcf[^/]*/0\.0\.[234]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/vcf2pgsnp/vcf2pgSnp/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/vcfsort/vcfsort/1.0.0_rc[13]\+galaxy0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/vcftools_[^/]*/vcftools_[^/]*/0\.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/weblogo3/rgweblogo3/0.4: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/devteam/xy_plot/XY_Plot_1/1.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/ecology/xarray_[^/]*/xarray_[^/]*/0.15.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/ethevenot/biosigner/biosigner/2.2.7: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/ethevenot/multivariate/Multivariate/2.3.10: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/ethevenot/univariate/Univariate/2.2.4: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/galaxyp/bed_to_protein_map/bed_to_protein_map/0.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/galaxyp/custom_pro_db/custom_pro_db/1.22.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/galaxyp/gffcompare_to_bed/gffcompare_to_bed/0.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/galaxyp/pep_pointer/pep_pointer/0.1.3: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/gregory-minevich/check_snpeff_candidates/check_snpeff_candidates/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/gregory-minevich/cloudmap_in_silico_complementation/in_silico_complementation/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/gregory-minevich/cloudmap_variant_discovery_mapping/cloudmap_variant_discovery_mapping/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/gregory-minevich/ems_variant_density_mapping/ems_variant_density_mapping/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/gregory-minevich/snp_mapping_using_wgs/snp_mapping_using_wgs/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/guerler/dbkit/dbkit_create/0.1.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/guru-ananda/heatmap/heatmap_1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/guru-ananda/karyotype_plot/karyotype_Plot_1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/guru-ananda/rhmm/hmm_1/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/bcftools_stats/bcftools_stats/1.9\+galaxy1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/busco/busco/4.1.[24]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/busco/busco/5.0.0\+galaxy0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/circos/circos[^/]*/0.69.8\+galaxy1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/circos/circgraph/0.9-RC2: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/collection_column_join/collection_column_join/0.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/cwpair2/cwpair2/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/datamash_[^/]*/datamash_[^/]*/1\.0\.6: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/deseq2/deseq2/2.1.8.[34]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/dexseq/dexseq_count/1.24.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/disco/disco/1.2.[01]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/duplex_family_size_distribution/[^/]*/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/egsea/egsea/1.10.0: {inherits: _legacy}
+  "toolshed.g2.bx.psu.edu/repos/iuc/extract_genomic_dna/Extract genomic DNA 1/3.0.3": {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/featurecounts/featurecounts/1.4.6.p5: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/featurecounts/featurecounts/1.6.0.[236]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/featurecounts/featurecounts/1.6.2: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/genetrack/genetrack/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/hisat2/hisat2/1\..*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/hisat2/hisat2/2.0.3: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/jbrowse/jbrowse[^/]*/1.16.1\+galaxy0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/meme_[^/]*/meme_[^/]*/4\.1[12]\..*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/miniasm/miniasm/0.2\+galaxy0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/migmap/migmap/1.0.2.[12]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/nextclade/nextclade/1.2.3\+galaxy0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/nonpareil/nonpareil/3.1.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/pathview/pathview/1.24.0\+galaxy0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/pilon/pilon/1.20.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/pipelign/pipelign/0.2\+galaxy0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/prestor_abseq3/prestor_abseq3/0.5.4: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/quast/quast/4.6.3: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/repmatch_gff3/repmatch_gff3/1.0.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/repmatch_gff3/repmatch_gff3/1.0.2: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/resize_coordinate_window/resize_coordinate_window/1.0.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/scikit_bio_diversity_beta_diversity/scikit_bio_diversity_beta_diversity/0.4.2.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/snippy/snippy_core/4.4.5\+galaxy0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/snpfreqplot/snpfreqplot/1.0\+galaxy0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/stringtie/stringtie/1.1.0: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/transit_[^/]*/transit_[^/]*/2\..*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/transit_[^/]*/transit_[^/]*/3\.0\.1.*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/variant_analyzer/[^/]+/1\..*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/vegan_[^/]*/vegan_[^/]*/0\.0\..*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/iuc/vsearch/vsearch_[^/]*/1\..*: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/lecorguille/anova/abims_anova/1.2.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/lparsons/fastq_join/fastq_join/1.1.2-806.1: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/nick/duplex/.*/0.[35]: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/peterjc/mummer/mummerplot_wrapper/0.0.7: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/pjbriggs/trimmomatic/trimmomatic/0.32.3: {inherits: _legacy}
+  toolshed.g2.bx.psu.edu/repos/pjbriggs/trimmomatic/trimmomatic/0.36.[235]: {inherits: _legacy}
+
+  # mothur needs special limits on file sizes and forks
+  _mothur:
+    abstract: true
+    cores: 1
+    mem: 20
+    params:
+    env:
+      - execute: ulimit -f 209715200
+      - execute: ulimit -u 4096
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_align_seqs/mothur_align_seqs/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 90
+    rules:
+    - id: rule_pulsar_incompatible_large_mem
+      if: |
+        helpers.concurrent_job_count_for_tool(app, tool, user) >= 1
+      execute: |
+        from galaxy.jobs.mapper import JobNotReadyException
+        raise JobNotReadyException()
+    scheduling:
+      require:
+      - roundup-mem
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_amova/mothur_amova/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_anosim/mothur_anosim/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_bin_seqs/mothur_bin_seqs/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_chimera_bellerophon/mothur_chimera_bellerophon/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_chimera_ccode/mothur_chimera_ccode/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_chimera_check/mothur_chimera_check/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_chimera_perseus/mothur_chimera_perseus/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_chimera_pintail/mothur_chimera_pintail/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_chimera_slayer/mothur_chimera_slayer/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_chimera_uchime/mothur_chimera_uchime/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_chimera_vsearch/mothur_chimera_vsearch/.*:
+    inherits: _mothur
+    cores: 7
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_chop_seqs/mothur_chop_seqs/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_classify_otu/mothur_classify_otu/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_classify_rf/mothur_classify_rf/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_classify_seqs/mothur_classify_seqs/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_classify_tree/mothur_classify_tree/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_clearcut/mothur_clearcut/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_cluster/mothur_cluster/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_cluster_classic/mothur_cluster_classic/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_cluster_fragments/mothur_cluster_fragments/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_cluster_split/mothur_cluster_split/.*:
+    inherits: _mothur
+    cores: 1
+    mem: 90
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_collect_shared/mothur_collect_shared/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_collect_single/mothur_collect_single/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_consensus_seqs/mothur_consensus_seqs/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_cooccurrence/mothur_cooccurrence/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_corr_axes/mothur_corr_axes/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_count_groups/mothur_count_groups/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_count_seqs/mothur_count_seqs/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_create_database/mothur_create_database/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_degap_seqs/mothur_degap_seqs/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_deunique_seqs/mothur_deunique_seqs/.*:
+    inherits: _mothur
+    # uses `from_work_dir` but move their work_dir outputs to the output path anyway
+    # https://github.com/galaxyproject/pulsar/issues/239#issuecomment-877202415
+    # FIXME: what you actually want is concurrent_job_count_for_this_set_of_tools() (or dest, but dest isn't set here)
+    rules:
+    - id: rule_pulsar_incompatible_large_mem
+      if: |
+        helpers.concurrent_job_count_for_tool(app, tool, user) >= 1
+      execute: |
+        from galaxy.jobs.mapper import JobNotReadyException
+        raise JobNotReadyException()
+    scheduling:
+      require:
+      - roundup-mem
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_deunique_tree/mothur_deunique_tree/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_dist_shared/mothur_dist_shared/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_fastq_info/mothur_fastq_info/.*:
+    inherits: _mothur
+    rules:
+    - id: rule_pulsar_incompatible_large_mem
+      if: |
+        helpers.concurrent_job_count_for_tool(app, tool, user) >= 1
+      execute: |
+        from galaxy.jobs.mapper import JobNotReadyException
+        raise JobNotReadyException()
+    scheduling:
+      require:
+      - roundup-mem
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_filter_seqs/mothur_filter_seqs/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_filter_shared/mothur_filter_shared/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_communitytype/mothur_get_communitytype/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_coremicrobiome/mothur_get_coremicrobiome/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_dists/mothur_get_dists/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_group/mothur_get_group/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_groups/mothur_get_groups/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_label/mothur_get_label/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_lineage/mothur_get_lineage/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_mimarkspackage/mothur_get_mimarkspackage/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_otulabels/mothur_get_otulabels/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_otulist/mothur_get_otulist/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_oturep/mothur_get_oturep/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_otus/mothur_get_otus/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_rabund/mothur_get_rabund/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_relabund/mothur_get_relabund/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_sabund/mothur_get_sabund/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_seqs/mothur_get_seqs/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_get_sharedseqs/mothur_get_sharedseqs/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_hcluster/mothur_hcluster/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_heatmap_bin/mothur_heatmap_bin/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_heatmap_sim/mothur_heatmap_sim/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_homova/mothur_homova/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_indicator/mothur_indicator/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_lefse/mothur_lefse/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_libshuff/mothur_libshuff/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_list_otulabels/mothur_list_otulabels/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_list_seqs/mothur_list_seqs/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_make_biom/mothur_make_biom/.*:
+    inherits: _mothur
+    cores: 1
+    mem: 90
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_make_contigs/mothur_make_contigs/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_make_design/mothur_make_design/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_make_fastq/mothur_make_fastq/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_make_group/mothur_make_group/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_make_lefse/mothur_make_lefse/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_make_lookup/mothur_make_lookup/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_make_shared/mothur_make_shared/.*:
+    inherits: _mothur
+    rules:
+    - id: rule_pulsar_incompatible_large_mem
+      if: |
+        helpers.concurrent_job_count_for_tool(app, tool, user) >= 1
+      execute: |
+        from galaxy.jobs.mapper import JobNotReadyException
+        raise JobNotReadyException()
+    scheduling:
+      require:
+      - roundup-mem
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_make_sra/mothur_make_sra/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_mantel/mothur_mantel/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_merge_files/mothur_merge_files/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_merge_groups/mothur_merge_groups/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_merge_sfffiles/mothur_merge_sfffiles/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_merge_taxsummary/mothur_merge_taxsummary/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_metastats/mothur_metastats/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_mimarks_attributes/mothur_mimarks_attributes/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_nmds/mothur_nmds/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_normalize_shared/mothur_normalize_shared/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_otu_association/mothur_otu_association/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_otu_hierarchy/mothur_otu_hierarchy/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_pairwise_seqs/mothur_pairwise_seqs/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_parse_list/mothur_parse_list/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_parsimony/mothur_parsimony/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_pca/mothur_pca/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_pcoa/mothur_pcoa/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_pcr_seqs/mothur_pcr_seqs/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_phylo_diversity/mothur_phylo_diversity/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_phylotype/mothur_phylotype/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_pre_cluster/mothur_pre_cluster/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_primer_design/mothur_primer_design/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_rarefaction_shared/mothur_rarefaction_shared/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_rarefaction_single/mothur_rarefaction_single/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_remove_dists/mothur_remove_dists/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_remove_groups/mothur_remove_groups/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_remove_lineage/mothur_remove_lineage/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_remove_otulabels/mothur_remove_otulabels/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_remove_otus/mothur_remove_otus/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_remove_rare/mothur_remove_rare/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_remove_seqs/mothur_remove_seqs/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_reverse_seqs/mothur_reverse_seqs/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_screen_seqs/mothur_screen_seqs/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_sens_spec/mothur_sens_spec/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_seq_error/mothur_seq_error/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_sffinfo/mothur_sffinfo/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_shhh_flows/mothur_shhh_flows/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_shhh_seqs/mothur_shhh_seqs/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_sort_seqs/mothur_sort_seqs/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_split_abund/mothur_split_abund/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_split_groups/mothur_split_groups/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_sub_sample/mothur_sub_sample/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_summary_qual/mothur_summary_qual/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_summary_seqs/mothur_summary_seqs/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_summary_shared/mothur_summary_shared/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_summary_single/mothur_summary_single/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_summary_tax/mothur_summary_tax/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_taxonomy_to_krona/mothur_taxonomy_to_krona/.*:
+    inherits: _mothur
+    mem: 26.6
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_tree_shared/mothur_tree_shared/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_trim_flows/mothur_trim_flows/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_trim_seqs/mothur_trim_seqs/.*:
+    inherits: _mothur
+    cores: 2
+    mem: 20
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_unifrac_unweighted/mothur_unifrac_unweighted/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_unifrac_weighted/mothur_unifrac_weighted/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_unique_seqs/mothur_unique_seqs/.*:
+    inherits: _mothur
+  toolshed.g2.bx.psu.edu/repos/iuc/mothur_venn/mothur_venn/.*:
+    inherits: _mothur
+
+  # legacy singularity resolv.conf fix tools
+
+  toolshed.g2.bx.psu.edu/repos/bgruening/get_online_data/get_pdb/0.1.0: {inherits: _singularity_resolv_fix}
+  toolshed.g2.bx.psu.edu/repos/bgruening/get_pdb/get_pdb/0.1.0: {inherits: _singularity_resolv_fix}
+  toolshed.g2.bx.psu.edu/repos/ebi-gxa/retrieve_scxa/retrieve_scxa/v0.0.2\+galaxy2: {inherits: _singularity_resolv_fix}
+  # TODO: add bedutil.py to IMPLICITLY_REQUIRED_TOOL_FILES
+  toolshed.g2.bx.psu.edu/repos/galaxyp/translate_bed/translate_bed/0.1.0:
+    inherits: _singularity_resolv_fix
+    scheduling:
+      reject:
+      - pulsar
+  toolshed.g2.bx.psu.edu/repos/iuc/ebi_search_rest_results/ebi_search_rest_results/0.1.1: {inherits: _singularity_resolv_fix}
+  toolshed.g2.bx.psu.edu/repos/iuc/gprofiler_[^/]*/gprofiler_[^/]*/0.1.7\+galaxy11: {inherits: _singularity_resolv_fix}
+  toolshed.g2.bx.psu.edu/repos/iuc/medaka_consensus/medaka_consensus/1.0.3\+galaxy2: {inherits: _singularity_resolv_fix}
+  toolshed.g2.bx.psu.edu/repos/iuc/ncbi_acc_download/ncbi_acc_download/0.2.[57]: {inherits: _singularity_resolv_fix}
+  toolshed.g2.bx.psu.edu/repos/iuc/snpeff/snpEff_get_chr_names/4.3\+T.galaxy2: {inherits: _singularity_resolv_fix}
+  toolshed.g2.bx.psu.edu/repos/iuc/sra_tools/[^/]*_dump/2\.9\..*: {inherits: _singularity_resolv_fix}
+  toolshed.g2.bx.psu.edu/repos/iuc/sra_tools/[^/]*_dump/2\.10\..*: {inherits: _singularity_resolv_fix}
+  toolshed.g2.bx.psu.edu/repos/iuc/sra_tools/[^/]*_dump/2\.11\.0\+galaxy0: {inherits: _singularity_resolv_fix}
+  toolshed.g2.bx.psu.edu/repos/iuc/tbvcfreport/tbvcfreport/0\.1\..*: {inherits: _singularity_resolv_fix}
+  toolshed.g2.bx.psu.edu/repos/iuc/trinotate/trinotate/3\.[12]\.1: {inherits: _singularity_resolv_fix}
+  toolshed.g2.bx.psu.edu/repos/galaxyp/unipept/unipept/4.3.0: {inherits: _singularity_resolv_fix}
+
+  # legacy container override tools
+
+  # missing dep on python, so just use the venv inside the resolved biocontainer, but don't include galaxy lib
+  _galaxy_venv:
+    env:
+    - name: SINGULARITYENV_PREPEND_PATH
+      value: $GALAXY_VIRTUAL_ENV/bin
+  toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_makeblastdb/0.2.01: {inherits: _galaxy_venv}
+  toolshed.g2.bx.psu.edu/repos/devteam/ncbi_blast_plus/ncbi_makeblastdb/2.10.1\+galaxy[01]: {inherits: _galaxy_venv}
+  toolshed.g2.bx.psu.edu/repos/iuc/bcftools_plugin_counts/bcftools_plugin_counts/1.9\+galaxy1: {inherits: _galaxy_venv}
+
+  # https://github.com/galaxyproject/galaxy/issues/16976
+  gff_filter_by_attribute:
+    params:
+      container_override:
+      - type: singularity
+        shell: /bin/sh
+        identifier: /cvmfs/singularity.galaxyproject.org/all/python:2.7.16
+  # unfortunately for this you need py2.7 + galaxy + bx, which there isn't a container of
+  #gff_filter_by_feature_count:
+  #  rules:
+  #    - id: tool_requires_galaxy
+  #      if: false
+  #      params:
+  #        container_override:
+  #        - type: singularity
+  #          shell: /bin/sh
+  #          identifier: /cvmfs/singularity.galaxyproject.org/all/bx-python:0.7.4--np112py27_0
+  #      env:
+  #        - name: SINGULARITYENV_PREPEND_PATH
+  #          value: ""
+  #        #- name: SINGULARITYENV_PYTHONPATH
+  #        #  value: ""
+
+  # in this case, the conda dep is actually broken since grep is compiled without PCRE support, so just use the
+  # container grep
+  toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_grep_tool/1.0.0:
+    params:
+      container_override:
+      - type: singularity
+        shell: /bin/bash
+        identifier: /cvmfs/main.galaxyproject.org/singularity/usegalaxy.org-legacy-environment--0
+    scheduling:
+      reject:
+      - pulsar
+
+  _galaxy_sequence_utils_1_0_0:
+    abstract: true
+    params:
+      container_override:
+      - type: singularity
+        shell: /bin/sh
+        identifier: /cvmfs/singularity.galaxyproject.org/all/galaxy_sequence_utils:1.0.0--py27_0
+  toolshed.g2.bx.psu.edu/repos/devteam/fastq_trimmer/fastq_trimmer/1.0.0: {inherits: _galaxy_sequence_utils_1_0_0}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastq_trimmer_by_quality/fastq_quality_trimmer/1.0.0: {inherits: _galaxy_sequence_utils_1_0_0}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastq_combiner/fastq_combiner/1.0.1: {inherits: _galaxy_sequence_utils_1_0_0}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastq_filter/fastq_filter/1.0.0: {inherits: _galaxy_sequence_utils_1_0_0}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastq_groomer/fastq_groomer/1.0.4: {inherits: _galaxy_sequence_utils_1_0_0}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastq_manipulation/fastq_manipulation/1.0.1: {inherits: _galaxy_sequence_utils_1_0_0}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastq_masker_by_quality/fastq_masker_by_quality/1.0.0: {inherits: _galaxy_sequence_utils_1_0_0}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastq_paired_end_splitter/fastq_paired_end_splitter/1.0.0: {inherits: _galaxy_sequence_utils_1_0_0}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastq_paired_end_joiner/fastq_paired_end_joiner/1.0.0: {inherits: _galaxy_sequence_utils_1_0_0}
+  toolshed.g2.bx.psu.edu/repos/devteam/fastq_stats/fastq_stats/1.0.0: {inherits: _galaxy_sequence_utils_1_0_0}
+
+  _bx_python_0_7_4_py27:
+    abstract: true
+    params:
+      container_override:
+      - type: singularity
+        shell: /bin/bash
+        identifier: /cvmfs/singularity.galaxyproject.org/all/bx-python:0.7.4--np112py27_0
+  toolshed.g2.bx.psu.edu/repos/arkarachai-fungtammasan/str_fm/PEsortedSAM2readprofile/1\..*: {inherits: _bx_python_0_7_4_py27}
+
+  # cutadapt=1.8,perl
+  _mulled_a1b1d4eb09345e8d7e95b30a377ef8c09bbdb4c6_ae68c25c9c45d8f92cef8ae9564f56b2db413fa8:
+    abstract: true
+    params:
+      container_override:
+      - type: singularity
+        shell: /bin/sh
+        identifier: /cvmfs/singularity.galaxyproject.org/all/mulled-v2-a1b1d4eb09345e8d7e95b30a377ef8c09bbdb4c6:ae68c25c9c45d8f92cef8ae9564f56b2db413fa8-0
+  # missing dep on perl
+  # the two oldest versions are pulsar incompatible (attempting to fetch tool files fails for reasons I have not explored)
+  toolshed.g2.bx.psu.edu/repos/bgruening/trim_galore/trim_galore/0.4.0:
+    inherits: _mulled_a1b1d4eb09345e8d7e95b30a377ef8c09bbdb4c6_ae68c25c9c45d8f92cef8ae9564f56b2db413fa8
+    scheduling: {reject: [pulsar]}
+  toolshed.g2.bx.psu.edu/repos/bgruening/trim_galore/trim_galore/0.4.1:
+    inherits: _mulled_a1b1d4eb09345e8d7e95b30a377ef8c09bbdb4c6_ae68c25c9c45d8f92cef8ae9564f56b2db413fa8
+    scheduling: {reject: [pulsar]}
+  toolshed.g2.bx.psu.edu/repos/bgruening/trim_galore/trim_galore/0.4.2: {inherits: _mulled_a1b1d4eb09345e8d7e95b30a377ef8c09bbdb4c6_ae68c25c9c45d8f92cef8ae9564f56b2db413fa8}
+
+  # biopython=1.65
+  toolshed.g2.bx.psu.edu/repos/bgruening/find_subsequences/bg_find_subsequences/0.2:
+    params:
+      container_override:
+      - type: singularity
+        shell: /bin/sh
+        identifier: /cvmfs/singularity.galaxyproject.org/all/biopython:1.66--np110py36_0
+
+  # container exists but galaxy picks the python 3 version, which needs this due to
+  # https://click.palletsprojects.com/en/7.x/python3/#python-3-surrogate-handling
+  _env_lc_all_utf8:
+    abstract: true
+    env:
+    - name: LC_ALL
+      value: C.UTF-8
+    - name: SINGULARITYENV_LC_ALL
+      value: $LC_ALL
+  toolshed.g2.bx.psu.edu/repos/iuc/multiqc/multiqc/1\.[3567]\..*: {inherits: _env_lc_all_utf8}
+  toolshed.g2.bx.psu.edu/repos/ebi-gxa/scanpy_[^/]*/scanpy_[^/]*/1\.6\.0.*: {inherits: _env_lc_all_utf8}
+
+  # TODO: test without this
+  toolshed.g2.bx.psu.edu/repos/devteam/pileup_interval/pileup_interval/1.0.[023]:
+    # no idea why this does not work automatically as the tool has a defined requirement on bx-python 0.7.1
+    params:
+      container_override: [{type: singularity, shell: '/bin/sh', identifier: "/cvmfs/singularity.galaxyproject.org/all/bx-python:0.7.1"}]
+
+  # no /bin/bash, but has /bin/sh
+  _stringtie_1_2_3:
+    abstract: true
+    params:
+      container_override:
+      - type: singularity
+        shell: /bin/sh
+        identifier: /cvmfs/singularity.galaxyproject.org/all/stringtie:1.2.3--0
+  toolshed.g2.bx.psu.edu/repos/iuc/stringtie/stringtie/1.2.3: {inherits: _stringtie_1_2_3}
+  toolshed.g2.bx.psu.edu/repos/iuc/stringtie/stringtie_merge/0.1.0: {inherits: _stringtie_1_2_3}
+
+  # hand built containers
+
+  # TODO: these are named properly for the requirements so once you update the resolver config to include the local
+  # hand-built directory they don't need explicit overrides. config is updated, just need to deploy and test
+
+  # requirements: mdanalysis=0.19.2
+  #   mulled-build --singularity --test 'python3 -c "import MDAnalysis"' --name-override 'mdanalysis:0.19.2--0' build-and-test mdanalysis=0.19.2,biopython=1.77
+  #_mdanalysis_0_19_2:
+  #  abstract: true
+  #  params:
+  #    container_override:
+  #    - type: singularity
+  #      shell: /bin/sh
+  #      identifier: /cvmfs/main.galaxyproject.org/singularity/mdanalysis:0.19.2--0
+  #toolshed.g2.bx.psu.edu/repos/chemteam/mdanalysis_[^/]*/mdanalysis_[^/]*/0.19: {inherits: _mdanalysis_0_19_2}
+
+  # requirements: mdanalysis=0.19.2 scipy=1.2.1 seaborn=0.9.0 nbdime=1.0.5
+  #   mulled-build --singularity --test 'python3 -c "import MDAnalysis"' --repository-name 'mulled-v2-a72811cdca09b8ce95c935a9e282fe346504b219:129950808bd92175be181add32a96712d3af19db' build-and-test mdanalysis=0.19.2,scipy=1.2.1,seaborn=0.9.0,nbdime=1.0.5,biopython=1.77
+  #_mulled_a72811cdca09b8ce95c935a9e282fe346504b219_129950808bd92175be181add32a96712d3af19db:
+  #  abstract: true
+  #  params:
+  #    container_override:
+  #    - type: singularity
+  #      shell: /bin/sh
+  #      identifier: /cvmfs/main.galaxyproject.org/singularity/mulled-v2-a72811cdca09b8ce95c935a9e282fe346504b219:129950808bd92175be181add32a96712d3af19db-0
+  #toolshed.g2.bx.psu.edu/repos/chemteam/mdanalysis_ramachandran_plot/mdanalysis_ramachandran_plot/0.1.3: {inherits: _mulled_a72811cdca09b8ce95c935a9e282fe346504b219_129950808bd92175be181add32a96712d3af19db}
+
+  # The biocontainer doesn't have the png driver and has broken libs (although the /usr/lib bind trick does work for the
+  # libs, but not the png driver). The hand-built container still needs the lib bind for system libGL.
+  #   mulled-build --singularity --name-override 'gnuplot-py:1.8--0' --test "true" --use-mamba build-and-test gnuplot-py=1.8
+  _gnuplot_1_8:
+    #params:
+    #  container_override:
+    #  - type: singularity
+    #    shell: /bin/sh
+    #    identifier: /cvmfs/main.galaxyproject.org/singularity/gnuplot-py:1.8--0
+    env:
+      - name: APPTAINER_BINDPATH
+        value: /usr/lib64:/usr/lib:ro
+      - name: APPTAINERENV_FONTCONFIG_FILE
+        value: /cvmfs/{{ galaxy_instance_codename }}.galaxyproject.org/fontconfig/fonts.conf
+      - name: APPTAINER_XDG_CACHE_HOME
+        value: $_GALAXY_JOB_TMP_DIR
+  barchart_gnuplot: {inherits: _gnuplot_1_8}
