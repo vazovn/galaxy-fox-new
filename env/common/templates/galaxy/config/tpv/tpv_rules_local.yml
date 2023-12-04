@@ -13,7 +13,7 @@ tools:
           param_dict = job.get_param_values(app)
           param_dict.get('__job_resource', {}).get('__job_resource__select') == 'yes'
         params:
-          walltime: "{str(job.get_param_values(app)['__job_resource']['project'])}"
+          project: "{str(job.get_param_values(app)['__job_resource']['project'])}"
 
   .*testing.*:
     cores: 2
