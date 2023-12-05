@@ -310,6 +310,10 @@ lmod_activation_scripts:
 #galaxy_dynamic_job_rules:
 #  - generate_slurm_job_params.py
 
+# CVMFS vars
+cvmfs_role: client
+galaxy_cvmfs_repos_enabled: config-repo
+cvmfs_quota_limit: 5000
 
 # --  NGINX --------------
 nginx_selinux_allow_local_connections: true

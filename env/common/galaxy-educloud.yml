@@ -70,20 +70,24 @@
      - role: galaxyproject.galaxy
        become: true
        become_user: "{{ galaxy_user_name }}"
-     - role: usegalaxy_eu.tpv_auto_lint
-       become: true
-       become_user: "{{ galaxy_user_name }}"
       # customized tasks
      - role: lifeportalfox.customized
        become: true
        become_user: "{{ galaxy_user_name }}"
      - role: galaxyproject.nginx
+       tags: nginx
        become: yes
        become_user: root
      - role: slurmdrmaa.galaxy
        become: yes
        become_user: root
      - role: galaxyproject.gxadmin
+     - role: usegalaxy_eu.tpv_auto_lint
+       become: true
+       become_user: "{{ galaxy_user_name }}"
+     - role: galaxyproject.cvmfs
+       become: yes
+       tags: cvmfs
 
   post_tasks:
     - name: Change data folder ownership
