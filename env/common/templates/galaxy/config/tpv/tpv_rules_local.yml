@@ -26,6 +26,23 @@ tools:
           not user or user.email not in admin_users
         fail: Unauthorized. Only admins can execute this tool.
 
+  toolshed.g2.bx.psu.edu/repos/galaxy-australia/alphafold2/alphafold/.*:
+    gpus: 1
+    cores: 12
+    mem: 48
+    params:
+      require_container: true
+    env:
+    - name: SINGULARITYENV_ALPHAFOLD_AA_LENGTH_MIN
+      value: "16"
+    - name: SINGULARITYENV_ALPHAFOLD_AA_LENGTH_MAX
+      value: "3000"
+    - name: SINGULARITYENV_ALPHAFOLD_DB
+      value: /cvmfs/data.galaxyproject.org/byhand/alphafold
+    scheduling:
+        require:
+        - slurm-gpu
+
 destinations:
   local_env:
     runner: local_runner
@@ -67,3 +84,20 @@ destinations:
     params:
       #native_specification: --nodes=1 --ntasks=1 --cpus-per-task={cores} --mem={mem} --time={params['walltime']}:00:00 --account={params['project']}
       native_specification: --time={walltime} --nodes=1 --partition={partition} --ntasks=1 --cpus-per-task={cores} --mem={round(mem*1024)} --account=ec73
+  slurm_gpu:
+    inherits: slurm
+    runner: slurm
+    max_accepted_cores: 64
+    max_accepted_mem: 512
+    max_cores: 32
+    # max_mem: 256
+    context:
+      walltime: 12:00:00
+      partition: accel
+    params:
+      singularity_run_extra_arguments: --nv
+      #native_specification: --nodes=1 --ntasks=1 --cpus-per-task={cores} --mem={mem} --time={params['walltime']}:00:00 --account={params['project']}
+      native_specification: --time={walltime} --nodes=1 --partition={partition} --gres=gres:gpu:{gpus} --ntasks=1 --cpus-per-task={cores} --mem={round(mem*1024)} --account=ec73
+    scheduling:
+      require:
+      - slurm-gpu

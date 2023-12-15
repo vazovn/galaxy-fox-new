@@ -22,6 +22,8 @@ galaxy_force_checkout: true
 
 galaxy_additional_venv_packages: ['total-perspective-vortex']
 
+galaxy_instance_codename: "main"
+
 ########################################################
 
 # Nginx
