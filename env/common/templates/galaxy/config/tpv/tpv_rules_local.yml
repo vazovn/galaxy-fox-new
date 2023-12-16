@@ -68,9 +68,9 @@ destinations:
       # Ensuring a consistent collation environment is good for reproducibility.
       LC_ALL: C
       # The cache directory holds the docker containers that get converted
-      APPTAINER_CACHEDIR: "{{ galaxy_lifeportal_data_dir }}/tmp/apptainer"
+      #APPTAINER_CACHEDIR: "{{ galaxy_lifeportal_data_dir }}/tmp/apptainer"
       # Singularity uses a temporary directory to build the squashfs filesystem
-      APPTAINER_TMPDIR: "{{ galaxy_lifeportal_data_dir }}/tmp/apptainer"
+      APPTAINER_TMPDIR: $TMPDIR
   slurm:
     inherits: singularity
     runner: slurm
