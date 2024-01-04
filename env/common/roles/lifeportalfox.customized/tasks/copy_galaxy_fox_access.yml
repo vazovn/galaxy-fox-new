@@ -49,6 +49,24 @@
              insertafter: '.*ftp_upload_purge=as_dict\["ftp_upload_purge"\].*'
              line: "            list_cluster_directories_script=as_dict[\"list_cluster_directories_script\"]"
 
+## Set ec01-galaxy-group GID (2102530) for dataset_path.real_path in ../files/x/y/x/dataset273848290.dat instead of ec-galaxy-group
+- name: Set correct GID to the dataset in files x y dataset directory
+  lineinfile:
+             path: "{{ galaxy_server_dir }}/lib/galaxy/jobs/__init__.py"
+             backup: yes
+             regexp: '^\s*util\.umask_fix_perms\(path, self\.app\.config\.umask, 0o666, self\.app\.config\.gid\).*$'
+             line: "                util.umask_fix_perms(path, self.app.config.umask, 0o666, 2102530)"
+             backrefs: yes
+
+## Set ec01-galaxy-group GID (2102530) instead of the user/galaxy user group when executing external_chown
+- name: Set correct GID to the dataset when executing external chown
+  lineinfile:
+             path: "{{ galaxy_server_dir }}/lib/galaxy/util/path/__init__.py"
+             backup: yes
+             regexp: '^\s*cmd\.extend\(\[path, pwent\[0\], str\(pwent\[3\]\)\]\).*$'
+             line: "        cmd.extend([path, pwent[0], '2102530'])"
+             backrefs: yes
+
 ## The two next modify the Permission denied message
 
 # Set the {mark} for ansible blockinfile for Permission denied message

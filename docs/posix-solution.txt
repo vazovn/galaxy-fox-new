@@ -149,6 +149,33 @@ aspasia.ad.fp.educloud.no:/fp/projects01         /fp/projects01         nfs ro,b
 
 
 
+=================================================== 13 ==============================================================
+
+To preserve the correct GID of the common galaxy group ec01-galaxy-group, edit
+
+lib/galaxy/util/path/__init__.py
+
+       #cmd.extend([path, pwent[0], str(pwent[3])])
+       cmd.extend([path, pwent[0], '2102530'])
+
+
+SOLUTION: replace by ansible in copy_galaxy_fox_access task
+
+
+=================================================== 14 ==============================================================
+
+To preserve the correct GID of the common galaxy group ec01-galaxy-group, edit
+
+lib/galaxy/jobs/__init__.py
+
+
+        #util.umask_fix_perms(path, self.app.config.umask, 0o666, self.app.config.gid)
+        util.umask_fix_perms(path, self.app.config.umask, 0o666, 2102530)
+
+
+SOLUTION: replace by ansible in copy_galaxy_fox_access task
+
+
 ========================= Import Directories solution ================
 
 Files from homes can be imported using the import libraries:

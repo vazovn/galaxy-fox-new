@@ -15,7 +15,8 @@
 
 - name: Install repository key
   rpm_key:
-    key: https://download.postgresql.org/pub/repos/yum/RPM-GPG-KEY-PGDG
+    #key: https://download.postgresql.org/pub/repos/yum/RPM-GPG-KEY-PGDG
+    key: https://download.postgresql.org/pub/repos/yum/keys/PGDG-RPM-GPG-KEY-RHEL
     state: present
 
 - name: Install pgdg repository package (RedHat)

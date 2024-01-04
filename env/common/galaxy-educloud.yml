@@ -78,9 +78,9 @@
        tags: nginx
        become: yes
        become_user: root
-     - role: slurmdrmaa.galaxy
-       become: yes
-       become_user: root
+     # - role: slurmdrmaa.galaxy
+     #   become: yes
+     #   become_user: root
      - role: galaxyproject.gxadmin
      - role: usegalaxy_eu.tpv_auto_lint
        become: true
