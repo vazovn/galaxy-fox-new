@@ -52,6 +52,22 @@
           group: "{{ galaxy_user_group }}"
           mode: 0755
           state: directory
+    ## Enable access for ec-galaxy user to scripts
+    - name: Check if scripts dir exists
+      stat:
+        path: " {{ galaxy_lifeportal_data_dir }}/scripts/"
+      register: scripts_dir
+    - name: Give ownership of scripts folder to galaxy user
+      become: true
+      become_user: root
+      command: "{{ item }} chdir={{ galaxy_lifeportal_data_dir }}/scripts/"
+      with_items:
+      - "chown {{ galaxy_user_name }}:{{ galaxy_user_group }} drmaa_external_runner.py"
+      - "chown {{ galaxy_user_name }}:{{ galaxy_user_group }} drmaa_external_killer.py"
+      - "chown {{ galaxy_user_name }}:{{ galaxy_user_group }} external_chown_script.py"
+      - "chown {{ galaxy_user_name }}:{{ galaxy_user_group }} list_cluster_directories.py"
+      changed_when: scripts_dir,stat.exists
+
 
   roles:
      - role: galaxyproject.miniconda
@@ -78,9 +94,9 @@
        tags: nginx
        become: yes
        become_user: root
-     # - role: slurmdrmaa.galaxy
-     #   become: yes
-     #   become_user: root
+     - role: slurmdrmaa.galaxy
+       become: yes
+       become_user: root
      - role: galaxyproject.gxadmin
      - role: usegalaxy_eu.tpv_auto_lint
        become: true
@@ -116,7 +132,7 @@
       - chmod -R 777 tmp
       - chmod -R g+s tmp
       - chmod -R 750 tools
-      - chmod -R 500 scripts
+      - chmod -R 700 scripts
       changed_when: false
 
     - name: Change ownership to scripts folder
@@ -138,12 +154,24 @@
       - chmod 500 drmaa_external_runner.py
       - chmod 500 drmaa_external_killer.py
       - chmod 500 external_chown_script.py
+      - chmod 500 list_cluster_directories.py
       changed_when: false
 
-  #
+
+
+  ## Some important remarks!!
+
+  #   1.
   #   # Enable the following variable in the terminal of the remote host (galaxy01.edicloud.no) in order to run
   #   # systemctl --user status galaxy and othe systemctl commands as ec-galaxy user
   #   # XDG_RUNTIME_DIR: "/run/user/{{ galaxy_user_name.uid }}"
   #   # export XDG_RUNTIME_DIR=/run/user/2100096
   #   ## Then as ec-galaxy user run
   #   ## systemctl --user status galaxy
+  #   # These variables are now in .bash_login file in the the ec-galaxy user home dir
+
+  #   2.
+  #   # Do not keep BOTH .bashrc AND .bash_login files in the the ec-galaxy user home dir. Remove .bashrc !!
+
+  #   3.
+  #   # In case of error message "handler_1 is not config watcher" reload nginx

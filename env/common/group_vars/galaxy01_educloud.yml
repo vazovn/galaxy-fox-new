@@ -59,7 +59,7 @@ galaxy_server_dir: "{{ galaxy_root }}/server"
 gunicorn_dir: /gunicorn
 
 # -- General tool related dirs --
-tools_root: "{{ galaxy_lifeportal_data_dir }}/tools/prod"
+tools_root: "{{ galaxy_lifeportal_data_dir }}/tools"
 tool_config_dir: "{{ tools_root }}/tool_config"
 tool_data_path: "{{ tools_root }}/tool_locs"
 tool_dependency_cache_dir: "{{ tools_root }}//tool_dependencies/_cache"
