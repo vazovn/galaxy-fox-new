@@ -48,11 +48,19 @@ In our playbook, the handlers which are executed after the roles, are located in
 
 === Our setup
 
-The last handler cannot use "graceful" command because it fails to find the socket files in /gunicorn. It works with the command "restart" instead. Be patient, there is an almost 2-3 min delay before the framework becomes operational as it takes about this time to install gravity and generate the socket files in /gunicorn. Every launch of the playbook stops gravity and the socket files disappear from the /gunicorn directory which results in faulure if we run the playbook with "graceful" command. "Graceful" needs socket files.
+The last handler cannot use "graceful" command because it fails to find the socket files in /gunicorn. It works with the command "restart" instead. 
+Be patient, there is an almost 2-3 min delay before the framework becomes operational as it takes about this time to install gravity and generate 
+the socket files in /gunicorn. Every launch of the playbook stops gravity and the socket files disappear from the /gunicorn directory which results in faulure if we run the playbook with "graceful" command. "Graceful" needs socket files.
 
 Yet, once started, the command "galaxyctl graceful" can be used for the subsequent restarts. There is no need to restart nginx if we wait long enough.
 
 ==== To understand :)
 
-There are two handlers in handlers/main.yml : "systemd daemon reload" and "galaxy systemd start" which shall be launched from the task "systemd-galaxy.yml". There is no debug info about them, but if I deactivate them, the playbook throws errors when installing packages. I assume it restarts the daemon after each installation.
+There are two handlers in handlers/main.yml : "systemd daemon reload" and "galaxy systemd start" which shall be launched from the task "systemd-galaxy.yml".
+There is no debug info about them, but if I deactivate them, the playbook throws errors when installing packages. 
+I assume it restarts the daemon after each installation.
+from Nate:
+"systemd daemon reload is used if you're using the direct systemd mode instead of Gravity (mostly for legacy/older versions). 
+galaxy systemd start is triggered by a handler "listener" on the notification start galaxy."
+
 
