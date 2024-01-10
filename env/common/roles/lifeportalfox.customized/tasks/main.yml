@@ -94,6 +94,33 @@
           line: "    JOB_RESOURCE_CONDITIONAL_XML = \"\"\"<conditional name=\"__job_resource\"><param name=\"__job_resource__select\" type=\"select\" label=\"Job Resource Parameters\"><option value=\"yes\">Specify job resource parameters</option><option value=\"no\">Use default job resource parameters</option></param><when value=\"no\"/><when value=\"yes\"/></conditional>\"\"\""
 
 
+
+## =========  2 Temporary tasks, to be removed in the future =========
+
+# Deactivate the attempt to renew certificate
+
+- name: Insert a hack for missing renewed certificate
+  lineinfile:
+    path: "{{ galaxy_server_dir }}/lib/galaxy/authnz/managers.py"
+    backup: yes
+    state: present
+    insertafter : "    def refresh_expiring_oidc_tokens_for_provider"
+    line: "{{ item }}"
+  with_items:
+   - '        return'
+   - '        log.debug(f" ==== DEACTIVATE refresh_expiring_oidc_tokens ../authnz/managers.py ============= %s ", auth)'
+   - '        # Nikolay temporary fix'
+
+
+# Remove ill-placed labels in the integrated tool panel
+
+- name: Remove ill-placed labels in the integrated tool panel
+  ansible.builtin.lineinfile:
+    path: "{{ tool_config_dir }}/integrated_tool_panel.xml"
+    state: absent
+    regexp: '"genomics_toolkits_label"|"metagenomics_label"|"deprecated_tools_label"'
+
+
 ### =============== Deactivated tasks =============== ##
 
 ## OIDC  - Educloud  configuration tasks ##
