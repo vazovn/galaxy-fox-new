@@ -95,7 +95,7 @@
 
 
 
-## =========  2 Temporary tasks, to be removed in the future =========
+## =========  Temporary task, to be removed in the future =========
 
 # Deactivate the attempt to renew certificate
 
@@ -110,15 +110,6 @@
    - '        return'
    - '        log.debug(f" ==== DEACTIVATE refresh_expiring_oidc_tokens ../authnz/managers.py ============= %s ", auth)'
    - '        # Nikolay temporary fix'
-
-
-# Remove ill-placed labels in the integrated tool panel
-
-- name: Remove ill-placed labels in the integrated tool panel
-  ansible.builtin.lineinfile:
-    path: "{{ tool_config_dir }}/integrated_tool_panel.xml"
-    state: absent
-    regexp: '"genomics_toolkits_label"|"metagenomics_label"|"deprecated_tools_label"'
 
 
 ### =============== Deactivated tasks =============== ##
