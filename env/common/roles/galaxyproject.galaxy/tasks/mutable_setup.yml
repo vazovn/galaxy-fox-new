@@ -15,6 +15,7 @@
         mode: "{{ __galaxy_dir_perms }}"
         group: "{{ __galaxy_user_group }}"
       loop: "{{ (galaxy_mutable_config_files + galaxy_mutable_config_templates) | map(attribute='dest') | map('dirname') | unique }}"
+      ignore_errors: true
 
     # force: no in the following 2 tasks will not overwrite existing configs
     - name: Instantiate mutable configuration files
