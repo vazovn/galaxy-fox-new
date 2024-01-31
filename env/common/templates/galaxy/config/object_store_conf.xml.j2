@@ -12,7 +12,7 @@
     <extra_dir type="job_work" path="database/jobs_directory"/>
 </object_store>
 -->
-<object_store type="distributed">
+<object_store type="hierarchical">
     <backends>
 
 <!--
@@ -78,7 +78,6 @@ More information about MSI Storage can be found [here](https://www.msi.umn.edu/c
         </backend>
 
 -->
-
 
        <backend id="galaxy-server-storage" allow_selection="true" type="disk" name="Galaxy-FOX server storage" store_by="uuid">
            <files_dir path="{{ galaxy_lifeportal_data_dir }}/files"/>
