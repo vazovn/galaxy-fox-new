@@ -31,6 +31,9 @@
     - name: Install Dependencies
       package:
         name: ['acl', 'bzip2', 'git', 'make', 'python3-psycopg2', 'tar', 'python3-virtualenv', 'python3-setuptools', 'python3.11',  'python3-pip.noarch']
+    - name: export ec-galaxy bash login vars
+      shell: source /home/ec-galaxy/.bash_login
+      become_user: "{{ galaxy_user_name }}"
     - name: Enable or reenable linger for ec-galaxy user (needed for user systemd setup)
       shell:
             "if [[ $(loginctl list-users | grep 'ec-galaxy') == *2100096* ]]; then loginctl disable-linger ec-galaxy && sleep 5 && loginctl enable-linger ec-galaxy; else loginctl enable-linger ec-galaxy; fi"
