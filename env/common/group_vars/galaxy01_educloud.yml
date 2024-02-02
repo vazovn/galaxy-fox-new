@@ -211,7 +211,8 @@ galaxy_config:
     galaxy_root: "{{ galaxy_root }}/server"
     galaxy_user: "{{ galaxy_user_name }}"
     virtualenv: "{{ galaxy_venv_dir }}"
-    umask: '013'
+    # Figure out a suitable umask later, 013 is causing permission issues.
+    # umask: '013'
     gunicorn:
       - bind: "unix:{{ gunicorn_dir }}/gunicorn0.sock"
         enable: true
