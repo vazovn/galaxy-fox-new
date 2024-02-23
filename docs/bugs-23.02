@@ -1,0 +1,6 @@
+
+1. Bug with accessing database, fixed by John Davis, 22 feb 2024
+
+https://github.com/galaxyproject/galaxy/issues/17508
+
+2. Bug with uploads
