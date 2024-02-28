@@ -1,4 +1,9 @@
 
+
+to compare the files, go to 
+
+"https://github.com/galaxyproject/galaxy/compare/release_23.1...release_23.2"
+
 1. Bug with accessing database, fixed by John Davis, 22 feb 2024
 
 https://github.com/galaxyproject/galaxy/issues/17508
@@ -6,3 +11,14 @@ https://github.com/galaxyproject/galaxy/issues/17508
 2. Bug with uploads
 
 https://github.com/galaxyproject/galaxy/issues/17539
+
+files to update
+
+Files updated and copied by ansible task
+posix.py
+galaxy.py
+
+Files edited by ansible tasks
+../managers/remote_files.py
+../client/src/util/upload-payload.js
+
