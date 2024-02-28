@@ -72,45 +72,36 @@
 # Set the {mark} for ansible blockinfile for Permission denied message
 - name: Set BEGIN END markers for the new Permissions denied block
   lineinfile:
-          path: "{{ galaxy_server_dir }}/lib/galaxy/managers/remote_files.py"
-          backup: yes
-          insertbefore:  '{{item.Before}}'
-          line: "{{item.Line}}"
+         path: "{{ galaxy_server_dir }}/lib/galaxy/managers/remote_files.py"
+         backup: yes
+         insertbefore:  '{{item.Before}}'
+         line: "{{item.Line}}"
   with_items:
-         - { Before: 'try:', Line: "### OPEN ANSIBLE MANAGED BLOCK ###"}
-         - { Before: 'elif format == RemoteFilesFormat.jstree:', Line: "### CLOSE ANSIBLE MANAGED BLOCK ###"}
+        - { Before: 'message = f"Problem listing file', Line: "### OPEN ANSIBLE MANAGED BLOCK ###"}
+        - { Before: 'if format == RemoteFilesFormat.flat:', Line: "### CLOSE ANSIBLE MANAGED BLOCK ###"}
 
 
-## Better display of permission denied
+
+# Better display of permission denied
 - name: Replace the message to Permission denied
   blockinfile:
-    path: "{{ galaxy_server_dir }}/lib/galaxy/managers/remote_files.py"
-    marker: "### {mark} ANSIBLE MANAGED BLOCK ###"
-    marker_begin: "OPEN"
-    marker_end: "CLOSE"
-    block: |
-            {% filter indent(width=8, first=true) %}
-            try:
-                index = file_source.list(file_source_path.path, recursive=recursive, user_context=user_file_source_context)
-            except exceptions.MessageException:
-                log.warning(f"Problem listing file source path {file_source_path}", exc_info=True)
-                raise
-            except Exception:
-            ## Nikolay
-            ## A better display of Permission denied error when trying to list cluster project directories
-                if "list_cluster_directories_script" in self._app.config.config_dict and self._app.config.config_dict["list_cluster_directories_script"] is not None:
-                    message = f"Permission denied {file_source_path.path}"
-                    log.warning(message, exc_info=True)
-                    raise exceptions.InternalServerError(message)
-                else:
-                    message = f"Problem listing file source path {file_source_path}"
-                    log.warning(message, exc_info=True)
-                    raise exceptions.InternalServerError(message)
-            if format == RemoteFilesFormat.flat:
-                # rip out directories, ensure sorted by path
-                index = [i for i in index if i["class"] == "File"]
-                index = sorted(index, key=itemgetter("path"))
-            {% endfilter %}
+   path: "{{ galaxy_server_dir }}/lib/galaxy/managers/remote_files.py"
+   marker: "### {mark} ANSIBLE MANAGED BLOCK ###"
+   marker_begin: "OPEN"
+   marker_end: "CLOSE"
+   block: |
+           {% filter indent(width=8, first=true) %}
+           ## Nikolay
+           ## A better display of Permission denied error when trying to list cluster project directories
+               if "list_cluster_directories_script" in self._app.config.config_dict and self._app.config.config_dict["list_cluster_directories_script"] is not None:
+                   message = f"Permission denied {file_source_path.path}"
+                   log.warning(message, exc_info=True)
+                   raise exceptions.InternalServerError(message)
+               else:
+                   message = f"Problem listing file source path {file_source_path}"
+                   log.warning(message, exc_info=True)
+                   raise exceptions.InternalServerError(message)
+           {% endfilter %}
 
 
 - name: Add list_cluster_directories config schema yaml

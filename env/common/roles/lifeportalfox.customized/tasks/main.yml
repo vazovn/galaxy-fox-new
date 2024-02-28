@@ -13,25 +13,49 @@
   include_tasks: copy_galaxy_fox_access.yml
   when: galaxy_manage_static_setup
   
+## 2 Tasks adding the protocols "gxuserhome://" and "gxuserprojects://" for remote files upload galaxy/client/src/utils/upload-payload.js
+## Without them throws Error: Invalid url: gxuserprojects://ec73/...
+## Needs client rebuild and must be removed after the custom protocols are fixed (Dannon 02.2024)
+
+## Check if file already modified
+- name: Verify that upload-payload has been modified in order to avoid unnecessary compilation in the next task
+  ansible.builtin.lineinfile:
+    path: "{{ galaxy_server_dir }}/client/src/utils/upload-payload.js"
+    regex: "gxuserprojects"
+    state: absent            # here's the trick
+  changed_when: false
+  check_mode: true
+  register: custom_plugin
+
+## Only run if custom_plugin_found fail
+- name: Add two protocols urls to upload remote files
+  lineinfile:
+    path: "{{ galaxy_server_dir }}/client/src/utils/upload-payload.js"
+    backup: yes
+    insertafter: "^.*gxuserimport.*$"
+    line: "{{ item }}"
+  with_items:
+   - '    "gxuserhome://",'
+   - '    "gxuserprojects://",'
+  when: custom_plugin.found != 1
+
 ## Tasks related to the modification of the front page (login page with Educloud) ## 
+- name: Verify that Login File has been modified for Galaxy-FOX in order to avoid unnecessary compilation in the next task
+  ansible.builtin.lineinfile:
+    path: "{{ galaxy_server_dir }}/client/src/components/Login/LoginForm.vue"
+    regex: "Welcome to the Galaxy-FOX"
+    state: absent            # here's the trick
+  changed_when: false
+  check_mode: true
+  register: login_vue_contains_cluster_name
+
 - name: Modify Login vue file
   include_tasks: copy_login_vue.yml
-  when: galaxy_manage_static_setup
+  when: galaxy_manage_static_setup and login_vue_contains_cluster_name != 1
 
-- name: Verify that Login File has been modified for Galaxy-FOX in order to avoid unnecessary compilation in the next task
-  find:
-    name: "{{ galaxy_server_dir }}/client/src/components/Login"
-    patterns: "LoginForm.vue"
-    file_type: file
-    use_regex: false
-    read_whole_file: true
-    contains: "Welcome to the Galaxy-FOX"
-  register: find_result_login_vue
-  failed_when: find_result_login_vue.matched == 0
-
-- name: Run make client again after Modify LoginForm vue file and Modify Makefile
+- name: Run make client again after Modify LoginForm vue file or upload-payload file and Modify Makefile
   shell: "source  {{ galaxy_path_prefix }}/srv/galaxy/venv/bin/activate && cd {{ galaxy_path_prefix }}/srv/galaxy/server && npm update caniuse-lite browserslist  && /usr/bin/make client"
-  when: find_result_login_vue == 0
+  when: login_vue_contains_cluster_name != 1 or custom_plugin_found != 1
 
   ## The following task is necessary only when the host has no connection to the outside world!!
 ## Activate 'galaxy_use_tunnel' in the group_vars/galaxy01_educloud.yml
