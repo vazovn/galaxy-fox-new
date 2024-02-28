@@ -131,7 +131,6 @@ class PosixFilesSource(BaseFilesSource):
         ## Disable the check for cluster directories
         if not self._safe_directory(dir_path) and self._list_posix_dirs is None:
             raise exceptions.ObjectNotFound(f"The specified directory does not exist [{dir_path}].")
-
         if recursive:
             res: List[Dict[str, Any]] = []
             effective_root = self._effective_root(user_context)
@@ -198,14 +197,18 @@ class PosixFilesSource(BaseFilesSource):
             target_native_path = os.path.normpath(target_native_path)
             assert target_native_path.startswith(os.path.normpath(effective_root))
 
-        target_native_path_parent = os.path.dirname(target_native_path)
+        target_native_path_parent, target_native_path_name = os.path.split(target_native_path)
         if not os.path.exists(target_native_path_parent):
             if self.allow_subdir_creation:
                 os.makedirs(target_native_path_parent)
             else:
                 raise Exception("Parent directory does not exist.")
 
-        shutil.copyfile(native_path, target_native_path)
+        # Use a temporary name while writing so anything that consumes written files can detect when they've completed,
+        # and identify interrupted writes
+        target_native_path_part = os.path.join(target_native_path_parent, f"_{target_native_path_name}.part")
+        shutil.copyfile(native_path, target_native_path_part)
+        os.rename(target_native_path_part, target_native_path)
 
     def _to_native_path(self, source_path: str, user_context=None):
         source_path = os.path.normpath(source_path)
@@ -220,19 +223,18 @@ class PosixFilesSource(BaseFilesSource):
         rel_path = os.path.normpath(os.path.join(dir, name))
         full_path = self._to_native_path(rel_path, user_context=user_context)
         uri = self.uri_from_path(rel_path)
-
         if os.path.isdir(full_path):
             return {"class": "Directory", "name": name, "uri": uri, "path": rel_path}
         else:
-                statinfo = os.lstat(full_path)
-                return {
-                    "class": "File",
-                    "name": name,
-                    "size": statinfo.st_size,
-                    "ctime": self.to_dict_time(statinfo.st_ctime),
-                    "uri": uri,
-                    "path": rel_path,
-                }
+            statinfo = os.lstat(full_path)
+            return {
+                "class": "File",
+                "name": name,
+                "size": statinfo.st_size,
+                "ctime": self.to_dict_time(statinfo.st_ctime),
+                "uri": uri,
+                "path": rel_path,
+            }
 
     ## Method returning dirs and files from list_cluster_directories_script.py script
     def _resource_info_to_dict_for_cluster(self, dir: str, name: str, user_context=None, dir_list=None):
@@ -255,6 +257,7 @@ class PosixFilesSource(BaseFilesSource):
                 raise exceptions.ConfigDoesNotAllowException(
                     f"directory ({directory}) is a symlink to a location not on the allowlist"
                 )
+
         if not os.path.exists(directory):
             return False
         return True

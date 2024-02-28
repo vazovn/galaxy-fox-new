@@ -31,7 +31,7 @@
                                 </div>
                                 <div v-if="enableOidc">
                                     <!-- OIDC login-->
-                                    <external-login :login_page="true" :exclude_idps="[connectExternalProvider]" />
+                                    <externalLogin :login_page="true" :exclude_idps="[connectExternalProvider]" />
                                 </div>
                             </b-card-body>
                                 <div class="row justify-content-md-center">
