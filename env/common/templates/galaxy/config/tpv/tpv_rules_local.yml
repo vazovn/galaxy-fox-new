@@ -56,7 +56,7 @@ destinations:
     max_accepted_mem: 1
     params:
       singularity_enabled: true
-      singularity_volumes: "{{ galaxy_lifeportal_data_dir }}:ro,$galaxy_root:ro,$tool_directory:ro,$working_directory:rw,$job_directory:rw,/cvmfs/:ro,/localscratch:rw"
+      singularity_volumes: "{{ galaxy_lifeportal_data_dir }}:ro,$galaxy_root:ro,$tool_directory:ro,$working_directory:rw,$job_directory:rw,/cvmfs/:ro,/localscratch:rw,$TMPDIR:/tmp:rw"
       container_resolvers:
         - type: explicit_singularity
         - type: cached_mulled_singularity
