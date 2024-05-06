@@ -1,0 +1,29 @@
+---
+- name: Copy welcome page
+  copy:
+    src: "files/galaxy/web_files/welcome.html.fox"
+    dest: "{{ galaxy_server_dir }}/static/welcome.html"
+  when: galaxy_server_dir is defined
+
+# Copy start page
+- name: Copy Login Form vue file
+  copy:
+    src: "files/galaxy/web_files/LoginForm.vue"
+    dest: "{{ galaxy_server_dir }}/client/src/components/Login/"
+    src: "files/galaxy/web_files/ExternalLogin.vue"
+    dest: "{{ galaxy_server_dir }}/client/src/components/User/ExternalIdentities/"
+  when: galaxy_server_dir is defined
+
+## Copy buttons and Galaxy Fox logo
+- name: Copy icon files
+  copy:
+    src: "files/galaxy/web_files/apply-button.jpeg"
+    dest: "{{ galaxy_server_dir }}/client/static/apply-button.jpeg"
+    src: "files/galaxy/web_files/login-button.png"
+    dest: "{{ galaxy_server_dir }}/client/static/login-button.png"
+    src: "files/galaxy/web_files/galaxyFoxLogo.png"
+    dest: "{{ galaxy_server_dir }}/client/static/galaxyFoxLogo.png"
+    src: "files/galaxy/web_files/fox_man2.png"
+    dest: "{{ galaxy_server_dir }}/client/static/fox_man2.png"
+  when: galaxy_server_dir is defined
+

@@ -1,53 +1,103 @@
+
 <template>
-    <div class="container">
-        <div class="row justify-content-md-center">
+        <div class="row justify-content-md-center" style="width: 100%;">
+
+
+<div style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; position: absolute; left: 107px; top: 438px; gap: 8px; padding: 32px;">
+    <div style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; flex-grow: 0; flex-shrink: 0; width: 249.23px; position: relative; gap: 11px;">
+        <p style="flex-grow: 0; flex-shrink: 0; font-size: 23px; text-align: left; color: #222;">
+              About
+        </p>
+     </div>
+     <div style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; flex-grow: 0; flex-shrink: 0; width: 552px; position: relative; gap: 11px;">
+        <p style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
+              <span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
+				  Fox is a powerful HPC-cluster available to all users of the Educloud Research infrastructure.
+              </span>
+              <br />
+              <span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
+                Educloud Research is a project-oriented self-service Platform as a Service that
+                gives easy and fast access to a work environment for research projects, storage that
+                is available from anywhere and low threshold HPC resources
+              </span>
+          </p>
+     </div>
+</div>
+
+<div style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; position: absolute; left: 780px; top: 438px; gap: 8px; padding: 32px;">
+     <div style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; flex-grow: 0; flex-shrink: 0; width: 249.23px; position: relative; gap: 11px;">
+            <p style="flex-grow: 0; flex-shrink: 0; font-size: 23px; text-align: left; color: #222;">
+              Getting started
+            </p>
+     </div>
+     <div style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; flex-grow: 0; flex-shrink: 0; width: 552px; position: relative; gap: 11px;">
+            <p style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
+				<span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
+					Apply for access to Educloud project ec73 (click on the Apply icon)
+				</span>
+				<br />
+				<span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
+					Install Google, Microsoft or another authenticator on your smartphone and scan the QR-code for 2 factor authentication (2FA).
+				</span>
+				<br />
+				<span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
+					Log in after your user and access to project ec73 is fixed
+				</span>
+				<br />
+				<br />
+				<span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
+					If you have any questions, please write to hpc-drift@usit.uio.no
+				</span>
+            </p>
+      </div>
+</div>
+
+<div style="width: 458px; height: 330px;">
+	<img src="https://galaxy.educloud.no/static/galaxyFoxLogo.png" style="width: 458px; height: 330px; position: absolute; left: 200px; top: 50.5px; object-fit: none;"/>
+</div>
+
+<table>
+    <tr>
+	<th>
+		 <b-card no-body align="center" header="Login with your username and password">
+		 </b-card>
+	</th>
+    </tr>
+    <tr>
+	<th>
             <template v-if="!confirmURL">
-                <div class="col col-lg-6">
-                    <b-alert :show="messageShow" :variant="messageVariant" v-html="messageText" />
-                        <span v-html="messageText" />
-                                   <b-form id="login" @submit.prevent="submitLogin()">
-                        <b-card no-body header="Welcome to the Galaxy-FOX : the Galaxy portal to the Fox cluster at UiO">
-                            <b-card-body>
-                                <div>
-                                    <!-- standard internal galaxy login -->
-                                     <b-form-group label="How to log in">
-                                        <b-form-text>
-                                                1. Apply for access to an educloud project : click on the educloud research icon below
-                                                </p>
-                                                <a href="https://research.educloud.no/login"><img src="https://research.educloud.no/_next/static/images/logo-text-ee0d4c59633474b318e00573994c7e60.svg" width="100"  height="20" class="center" ></a>
-                                                </p>
-                                                and select project <font color="red">ec73</font> at the next screen
-                                                </p>
-											    </b-form-text>
-											    <b-form-text>
-                                                2. Install Google, Microsoft or another authenticator on your smartphone and scan the QR-code for 2 factor authentication (2FA). See <a href="https://www.uio.no/english/services/it/research/platforms/edu-research/help/two-factor-authentication.html">instructions here</a>
-                                                </p>
-												</b-form-text>
-												<b-form-text>
-                                                3. When ready with previous steps, click on the Fox icon below to  log in
-                                                </p>
-											</b-form-text>
-                                    </b-form-group>
-                                </div>
-                                <div v-if="enableOidc">
+                      <b-form id="login" @submit.prevent="submitLogin()">
+                                <div v-if="enableOidc" class="row justify-content-md-center">
                                     <!-- OIDC login-->
                                     <externalLogin :login_page="true" :exclude_idps="[connectExternalProvider]" />
                                 </div>
-                            </b-card-body>
-                                <div class="row justify-content-md-center">
-                                        <b-form-text>
-											</hr>
-                                            If you have any questions, please write to <a href="mailto:hpc-drift@usit.uio.no">hpc-drift@usit.uio.no</a>
-                                            </p>
-                                        </b-form-text>
-								</div>
-                        </b-card>
-                    </b-form>
-                </div>
+                      </b-form>
             </template>
+	</th>
+    </tr>
+    <tr>
+	<th>
+                <b-card no-body align="center" header="Apply for access">
+                </b-card>
+	</th>
+    </tr>
+    <tr>
+	<th>
+                       <div class="row justify-content-md-center">
+                                <p></p>
+                                  <a href="https://research.educloud.no/register"><img src="https://galaxy.educloud.no/static/apply-button.png" /></a>
+                                <p></p>
+                       </div>
+
+	</th>
+    </tr>
+   <tr><th></th></tr>
+
+</table>
+
         </div>
-    </div>
 </template>
+
 
 <script>
 import axios from "axios";
@@ -188,7 +238,15 @@ export default {
 };
 </script>
 <style scoped>
-.card-body {
-    overflow: visible;
+.form {
+    background-color: rgb(173, 216, 230);
+    padding: 100px;
+    text-align: right;
+    margin: auto;
+    display: table;
+}
+
+th {
+  padding: 15px;
 }
 </style>

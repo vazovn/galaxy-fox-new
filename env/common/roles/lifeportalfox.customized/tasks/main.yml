@@ -1,11 +1,23 @@
 ---
 
-- name: Copy welcome page
-  include_tasks: copy_welcome_page.yml
-  when: galaxy_manage_static_setup
+# - name: Copy welcome page
+#   include_tasks: copy_welcome_page.yml
+#   when: galaxy_manage_static_setup
+#
+# - name: Change favicon png file put fox icon
+#   include_tasks: copy_favicon_png.yml
+#   when: galaxy_manage_static_setup
+#
+# - name: Copy buttons for the start page
+#   include_tasks: copy_buttons.yml
+#   when: galaxy_manage_static_setup
+#
+# - name: Copy Fox logo for the start page
+#   include_tasks: copy_fox_logo.yml
+#   when: galaxy_manage_static_setup
 
-- name: Change favicon png file put fox icon
-  include_tasks: copy_favicon_png.yml
+- name: Copy static files for the start page
+  include_tasks: copy_static_files_for_the_start_page.yml
   when: galaxy_manage_static_setup
 
 ## Task enbling the users to access their home & project directories on the cluster (Fox)
@@ -49,9 +61,9 @@
   check_mode: true
   register: login_vue_contains_cluster_name
 
-- name: Modify Login vue file
-  include_tasks: copy_login_vue.yml
-  when: galaxy_manage_static_setup and login_vue_contains_cluster_name != 1
+# - name: Modify Login vue file
+#   include_tasks: copy_login_vue.yml
+#   when: galaxy_manage_static_setup and login_vue_contains_cluster_name != 1
 
 - name: Run make client again after Modify LoginForm vue file or upload-payload file and Modify Makefile
   shell: "source  {{ galaxy_path_prefix }}/srv/galaxy/venv/bin/activate && cd {{ galaxy_path_prefix }}/srv/galaxy/server && npm update caniuse-lite browserslist  && /usr/bin/make client"
