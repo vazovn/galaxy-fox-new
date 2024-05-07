@@ -23,7 +23,7 @@
     dest: "{{ galaxy_server_dir }}/client/static/login-button.png"
     src: "files/galaxy/web_files/galaxyFoxLogo.png"
     dest: "{{ galaxy_server_dir }}/client/static/galaxyFoxLogo.png"
-    src: "files/galaxy/web_files/fox_man2.png"
-    dest: "{{ galaxy_server_dir }}/client/static/fox_man2.png"
+    src: "files/galaxy/web_files/fox_man2.svg"
+    dest: "{{ galaxy_server_dir }}/client/static/favicon.svg"
   when: galaxy_server_dir is defined
 
