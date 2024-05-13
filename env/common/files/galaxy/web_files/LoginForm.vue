@@ -51,7 +51,7 @@
             </p>
       </div>
 </div>
-
+      
 <div style="width: 458px; height: 330px;">
 	<img src="https://galaxy.educloud.no/static/galaxyFoxLogo.png" style="width: 458px; height: 330px; position: absolute; left: 200px; top: 50.5px; object-fit: none;"/>
 </div>
@@ -59,8 +59,9 @@
 <table>
     <tr>
 	<th>
-		 <b-card no-body align="center" header="Login with your username and password">
-		 </b-card>
+           <div class="row justify-content-md-center">
+		 Login with your username and password
+           </div>
 	</th>
     </tr>
     <tr>
@@ -77,8 +78,9 @@
     </tr>
     <tr>
 	<th>
-                <b-card no-body align="center" header="Apply for access">
-                </b-card>
+             <div class="row justify-content-md-center">
+                Apply for access
+             </div>
 	</th>
     </tr>
     <tr>
