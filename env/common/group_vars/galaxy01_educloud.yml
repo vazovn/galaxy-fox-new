@@ -4,6 +4,8 @@
 #pip_virtualenv_command: /bin/python3.11 -m venv --copies
 pip_virtualenv_command: "{{ miniconda_prefix }}/envs/_galaxy_/bin/python{{ galaxy_python_version }} -m venv --copies"
 
+favicon_url: https://usegalaxy.org/favicon.ico
+
 # Galaxy
 
 # only for RHEL8 otherwise "true"

@@ -30,7 +30,7 @@ server {
 
 		# This is the backend to send the requests to.
 
-        proxy_pass http://galaxy;
+    proxy_pass http://galaxy;
 
 		proxy_set_header Host $http_host;
 		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -65,8 +65,8 @@ server {
 	#	alias {{ galaxy_server_dir }}/static/robots.txt;
 	#}
 
-	#location /favicon.ico {
-	#	alias {{ galaxy_server_dir }}/static/favicon.ico;
-	#}
+	location /favicon.ico {
+	  proxy_pass {{ favicon_url }};
+	}
 }
 
