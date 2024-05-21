@@ -4,7 +4,7 @@
 #pip_virtualenv_command: /bin/python3.11 -m venv --copies
 pip_virtualenv_command: "{{ miniconda_prefix }}/envs/_galaxy_/bin/python{{ galaxy_python_version }} -m venv --copies"
 
-favicon_url: https://usegalaxy.org/favicon.ico
+favicon_url: https://www.usit.uio.no/bilder/fox_man.ico?vrtx=thumbnail
 
 # Galaxy
 
