@@ -5,25 +5,46 @@
     dest: "{{ galaxy_server_dir }}/static/welcome.html"
   when: galaxy_server_dir is defined
 
-# Copy start page
+# Copy Login page
 - name: Copy Login Form vue file
   copy:
     src: "files/galaxy/web_files/LoginForm.vue"
     dest: "{{ galaxy_server_dir }}/client/src/components/Login/"
+  when: galaxy_server_dir is defined
+
+
+# Copy External Login page
+- name: Copy External Loginm vue file
+  copy:
     src: "files/galaxy/web_files/ExternalLogin.vue"
     dest: "{{ galaxy_server_dir }}/client/src/components/User/ExternalIdentities/"
   when: galaxy_server_dir is defined
 
+
 ## Copy buttons and Galaxy Fox logo
-- name: Copy icon files
+- name: Copy apply button file
   copy:
-    src: "files/galaxy/web_files/apply-button.jpeg"
-    dest: "{{ galaxy_server_dir }}/client/static/apply-button.jpeg"
-    src: "files/galaxy/web_files/login-button.png"
-    dest: "{{ galaxy_server_dir }}/client/static/login-button.png"
-    src: "files/galaxy/web_files/galaxyFoxLogo.png"
-    dest: "{{ galaxy_server_dir }}/client/static/galaxyFoxLogo.png"
-    src: "files/galaxy/web_files/fox_man2.svg"
-    dest: "{{ galaxy_server_dir }}/client/static/favicon.svg"
+    src: "files/galaxy/web_files/apply-button.png"
+    dest: "{{ galaxy_server_dir }}/static/apply-button.png"
   when: galaxy_server_dir is defined
 
+## Copy buttons and Galaxy Fox logo
+- name: Copy login button file
+  copy:
+    src: "files/galaxy/web_files/login-button.png"
+    dest: "{{ galaxy_server_dir }}/static/login-button.png"
+  when: galaxy_server_dir is defined
+
+## Copy buttons and Galaxy Fox logo
+- name: Copy galaxy logo file
+  copy:
+    src: "files/galaxy/web_files/galaxyFoxLogo.png"
+    dest: "{{ galaxy_server_dir }}/static/galaxyFoxLogo.png"
+  when: galaxy_server_dir is defined
+
+## Copy buttons and Galaxy Fox logo
+- name: Copy favicon file
+  copy:
+    src: "files/galaxy/web_files/fox_man2.svg"
+    dest: "{{ galaxy_server_dir }}/static/favicon.svg"
+  when: galaxy_server_dir is defined

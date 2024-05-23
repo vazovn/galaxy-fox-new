@@ -188,9 +188,9 @@ galaxy_config:
     # From env.yml:
     tool_config_file: "{{ tool_config_file }}"
     tool_data_table_config_path: "{{ tool_data_table_config_path }}"
-    shed_tool_data_table_config: "{{ shed_tool_data_table_config }}"
+    # shed_tool_data_table_config: "{{ shed_tool_data_table_config }}"
     shed_data_manager_config_file: "{{ shed_data_manager_config_file }}"
-    install_database_connection: "{{ install_database_connection }}"
+    # install_database_connection: "{{ install_database_connection }}"
 
 
     # This block is new - after 21.09. It means that the packages (the PATHs)
