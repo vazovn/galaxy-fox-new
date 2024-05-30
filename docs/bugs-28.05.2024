@@ -1,0 +1,11 @@
+1. Needed to replace the file
+
+/cluster/galaxy-test/srv/galaxy/server/lib/galaxy/model/store/discovery.py
+
+/cluster/galaxy-test/srv/galaxy/server/lib/galaxy/model/__init__.py
+
+by a newer version (diff prod) - some methods were not working.
+
+Next time we shall run the playbook again with `force` option to pull the changes.
+
+The old versions are stil in place (*.original) for comparison.
