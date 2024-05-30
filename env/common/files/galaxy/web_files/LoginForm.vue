@@ -38,6 +38,7 @@
 				<br />
 				<span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
 					Install Google, Microsoft or another authenticator on your smartphone and scan the QR-code for 2 factor authentication (2FA).
+                                        <a href="https://www.uio.no/english/services/it/research/platforms/edu-research/help/two-factor-authentication.html">See explanation here!</a>
 				</span>
 				<br />
 				<span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
