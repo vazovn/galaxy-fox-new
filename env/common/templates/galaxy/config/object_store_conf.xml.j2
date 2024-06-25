@@ -7,11 +7,11 @@
 -->
 
 
-<object_store type="hierarchical">
+<object_store type="distributed">
 
     <backends>
 
-       <backend id="galaxy-server-storage" allow_selection="true" type="disk" name="Galaxy-FOX server storage" store_by="uuid" order="0">
+       <backend id="galaxy-server-storage" allow_selection="true" type="disk" name="Galaxy-FOX server storage" store_by="uuid" order="0" weight="10">
            <files_dir path="{{ galaxy_lifeportal_data_dir }}/files"/>
            <extra_dir type="temp" path="{{ galaxy_lifeportal_data_dir }}/tmp"/>
            <extra_dir type="job_work" path="{{ galaxy_lifeportal_data_dir }}/jobs_directory"/>
@@ -23,7 +23,7 @@
        </backend>
 
 
-       <backend id="fox-homedir" allow_selection="true" type="disk" name="FOX-Home High Performance Storage" store_by="uuid" order="1" >
+       <backend id="fox-homedir" allow_selection="true" type="disk" name="FOX-Home High Performance Storage" store_by="uuid" order="1" weight="10">
            <files_dir path="/fp/homes01/u01/{{ galaxy_user_name }}/"/>
            <extra_dir type="temp" path="{{ galaxy_lifeportal_data_dir }}/tmp"/>
            <extra_dir type="job_work" path="{{ galaxy_lifeportal_data_dir }}/jobs_directory"/>
