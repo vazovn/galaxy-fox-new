@@ -33,21 +33,23 @@
      <div style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; flex-grow: 0; flex-shrink: 0; width: 552px; position: relative; gap: 11px;">
             <p style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
 				<span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
-					Apply for access to Educloud project ec73 (click on the Apply icon)
+					Apply for access to Educloud:
+                        <ul>
+                            <li>If you have a Norwegian electronic ID, please click on the Apply icon and select project ec73. Your application will be handled shortly.</li>
+                            <li>If you don't have a Norwegian electronic ID, please write to <em>hpc-drift@usit.uio.no</em>.</li>
+                        </ul>
 				</span>
-				<br />
 				<span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
 					Install Google, Microsoft or another authenticator on your smartphone and scan the QR-code for 2 factor authentication (2FA).
                                         <a href="https://www.uio.no/english/services/it/research/platforms/edu-research/help/two-factor-authentication.html">See explanation here!</a>
 				</span>
-				<br />
 				<span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
-					Log in after your user and access to project ec73 is fixed
+					Log in after your user and access to project ec73 is fixed.
 				</span>
 				<br />
 				<br />
 				<span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
-					If you have any questions, please write to hpc-drift@usit.uio.no
+					If you have any questions, please write to <em>hpc-drift@usit.uio.no</em>.
 				</span>
             </p>
       </div>
