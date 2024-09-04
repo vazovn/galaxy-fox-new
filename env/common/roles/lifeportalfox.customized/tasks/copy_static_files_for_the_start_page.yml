@@ -21,7 +21,7 @@
   when: galaxy_server_dir is defined
 
 
-## Copy buttons and Galaxy Fox logo
+## Copy buttons and Galaxy (Fox) logo
 - name: Copy apply button file
   copy:
     src: "files/galaxy/web_files/apply-button.png"
@@ -40,6 +40,13 @@
   copy:
     src: "files/galaxy/web_files/galaxyFoxLogo.png"
     dest: "{{ galaxy_server_dir }}/static/galaxyFoxLogo.png"
+  when: galaxy_server_dir is defined
+
+## Copy Galaxy Fox logo
+- name: Copy galaxy logo file
+  copy:
+    src: "files/galaxy/web_files/galaxyLogo.png"
+    dest: "{{ galaxy_server_dir }}/static/galaxyLogo.png"
   when: galaxy_server_dir is defined
 
 ## Copy buttons and Galaxy Fox logo

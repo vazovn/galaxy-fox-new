@@ -20,6 +20,11 @@
                 gives easy and fast access to a work environment for research projects, storage that
                 is available from anywhere and low threshold HPC resources
               </span>
+              <br />
+              <span style="align-self: stretch; flex-grow: 0; flex-shrink: 0; width: 552px; font-size: 16px; text-align: left; color: #222;">
+                <a href="https://www.uio.no/english/services/it/research/hpc/galaxyOnFox/hjelp/moreabout.html">More about Galaxy Framework</a>
+                <img src="https://galaxy.educloud.no/static/galaxyLogo.png" style="width: 40px; height: 40px; position: absolute;"/>
+              </span>
           </p>
      </div>
 </div>
