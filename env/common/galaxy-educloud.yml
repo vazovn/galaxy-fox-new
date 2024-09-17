@@ -69,7 +69,7 @@
       - "chown {{ galaxy_user_name }}:{{ galaxy_user_group }} drmaa_external_killer.py"
       - "chown {{ galaxy_user_name }}:{{ galaxy_user_group }} external_chown_script.py"
       - "chown {{ galaxy_user_name }}:{{ galaxy_user_group }} list_cluster_directories.py"
-      changed_when: scripts_dir,stat.exists
+      changed_when: scripts_dir.stat.exists
 
 
   roles:
