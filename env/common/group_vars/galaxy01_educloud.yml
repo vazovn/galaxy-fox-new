@@ -1,7 +1,6 @@
 ---
 
 # Python3 support
-#pip_virtualenv_command: /bin/python3.11 -m venv --copies
 pip_virtualenv_command: "{{ miniconda_prefix }}/envs/_galaxy_/bin/python{{ galaxy_python_version }} -m venv --copies"
 
 favicon_url: https://www.usit.uio.no/bilder/fox_man.ico?vrtx=thumbnail
@@ -148,15 +147,14 @@ galaxy_config:
     object_store_cache_path: object_store_cache
     object_store_cache_size: -1
 
+    # Galaxy Job Configuration is specified in the file env.yml  (for PROD/TEST respectively) in the variable 
+    # galaxy_job_config: "{{ galaxy_job_config }}"
+
     # job_config_file: "{{ tools_root }}/tool_config/lifeportal_job_conf.yml"
     job_config: "{{ galaxy_job_config }}"
     job_metrics_config_file: "{{ galaxy_root }}/server/config/job_metrics_conf.xml.sample"
     job_resource_params_file: "{{ galaxy_config_dir }}/job_resource_params_conf.xml"
-
-
-    # job_config_file: "{{ tools_root }}/tool_config/job_conf.xml"
-    # job_resource_params_file:  "{{ tools_root }}/tool_config/job_resource_params_conf.xml"
-
+    
     cleanup_job: never
 
 # -- Run jobs as real user setup ----------------------------------------
@@ -179,8 +177,6 @@ galaxy_config:
     user_library_import_symlink_allowlist: /fp/homes01/u01/ec-nikolaiv,/fp/homes01/u01/ec-torfin
 
 # -- Tool Configuration----------------------------------------
-
-    # SABRY's files from Lifeportal SAGA
 
     integrated_tool_panel_config: "{{ tool_config_dir }}/integrated_tool_panel.xml"
     datatypes_config_file: "{{ galaxy_root }}/server/config/datatypes_conf.xml.sample"
@@ -249,9 +245,6 @@ galaxy_config:
         pools:
           - job-handlers
           - workflow-schedulers
-
-# Galaxy Job Configuration is specified in env.yml
-#galaxy_job_config: "{{ galaxy_job_config }}"
 
 # -- Galaxy dirs ---------------------
 galaxy_dirs:
