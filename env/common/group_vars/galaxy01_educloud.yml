@@ -79,6 +79,7 @@ galaxy_oidc_backend_files_target_dir: "{{ galaxy_venv_dir }}/lib/python{{ galaxy
 galaxy_scripts_dir: "{{ galaxy_lifeportal_data_dir }}/scripts"
 galaxy_scripts_src_dir: files/galaxy/scripts
 
+# Instead of galaxy_job_config_file: "{{ galaxy_config_dir }}/job_conf.yml" in usegalaxy_eu.tpv_auto_lint/defaults/main.yml, use the following
 galaxy_job_config_file: "{{ galaxy_config_dir }}/galaxy.yml"
 
 galaxy_config:
