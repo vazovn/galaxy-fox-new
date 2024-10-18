@@ -17,17 +17,20 @@ from typing import (
     Dict,
     List,
     Optional,
+    Tuple,
 )
 
 from typing_extensions import Unpack
 
 from galaxy import exceptions
+from galaxy.files import OptionalUserContext
 from galaxy.util.path import (
     safe_contains,
     safe_path,
     safe_walk,
 )
 from . import (
+    AnyRemoteEntry,
     BaseFilesSource,
     FilesSourceOptions,
     FilesSourceProperties,
@@ -63,6 +66,7 @@ class PosixFilesSource(BaseFilesSource):
         self.enforce_symlink_security = props.get("enforce_symlink_security", DEFAULT_ENFORCE_SYMLINK_SECURITY)
         self.delete_on_realize = props.get("delete_on_realize", DEFAULT_DELETE_ON_REALIZE)
         self.allow_subdir_creation = props.get("allow_subdir_creation", DEFAULT_ALLOW_SUBDIR_CREATION)
+
 
     ### Nikolay
     ### The next five methods filter the display of the "Chose remote files" - Access FOX projects.
@@ -122,7 +126,17 @@ class PosixFilesSource(BaseFilesSource):
                 names_only_acessible_dirs_and_files.append(element)
         return (acessible_dirs_and_files, names_only_acessible_dirs_and_files)
 
-    def _list(self, path="/", recursive=True, user_context=None, opts: Optional[FilesSourceOptions] = None):
+    def _list(
+        self,
+        path="/",
+        recursive=True,
+        user_context: OptionalUserContext = None,
+        opts: Optional[FilesSourceOptions] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        query: Optional[str] = None,
+        sort_by: Optional[str] = None,
+    ) -> Tuple[List[AnyRemoteEntry], int]:
         if not self.root:
             raise exceptions.ItemAccessibilityException("Listing files at file:// URLs has been disabled.")
         dir_path = self._to_native_path(path, user_context=user_context)
@@ -132,14 +146,14 @@ class PosixFilesSource(BaseFilesSource):
         if not self._safe_directory(dir_path) and self._list_posix_dirs is None:
             raise exceptions.ObjectNotFound(f"The specified directory does not exist [{dir_path}].")
         if recursive:
-            res: List[Dict[str, Any]] = []
+            res: List[AnyRemoteEntry] = []
             effective_root = self._effective_root(user_context)
             for p, dirs, files in safe_walk(dir_path, allowlist=self._allowlist):
                 rel_dir = os.path.relpath(p, effective_root)
                 to_dict = functools.partial(self._resource_info_to_dict, rel_dir, user_context=user_context)
                 res.extend(map(to_dict, dirs))
                 res.extend(map(to_dict, files))
-            return res
+            return res, len(res)
         else:
             if self._list_posix_dirs is not None:
                 #log.debug(" ========= LIST CLUSTER DIR USED !!!  ================== dir path %s " % dir_path)
@@ -156,17 +170,21 @@ class PosixFilesSource(BaseFilesSource):
                     to_dict = functools.partial(self._resource_info_to_dict_for_cluster, path, user_context=user_context, dir_list=list_array_per_file)
                     #log.debug(" ========= SECOND AND NEXT PASSES LIST DIR ================== %s " % list(map(to_dict, res)))
 
-                return list(map(to_dict, res))
+                return list(map(to_dict, res)), len(res)
 
             else:
                 #log.debug(" ========= LIST CLUSTER DIR NOT USED !!!  ================== dir path %s " % dir_path)
                 res = os.listdir(dir_path)
                 to_dict = functools.partial(self._resource_info_to_dict, path, user_context=user_context)
                 #log.debug(" ========= PASSES  ================== %s " % list(map(to_dict, res)))
-                return list(map(to_dict, res))
+                return list(map(to_dict, res)), len(res)
 
     def _realize_to(
-        self, source_path: str, native_path: str, user_context=None, opts: Optional[FilesSourceOptions] = None
+        self,
+        source_path: str,
+        native_path: str,
+        user_context: OptionalUserContext = None,
+        opts: Optional[FilesSourceOptions] = None,
     ):
         if not self.root and (not user_context or not user_context.is_admin):
             raise exceptions.ItemAccessibilityException("Writing to file:// URLs has been disabled.")
@@ -186,7 +204,11 @@ class PosixFilesSource(BaseFilesSource):
             shutil.move(source_native_path, native_path)
 
     def _write_from(
-        self, target_path: str, native_path: str, user_context=None, opts: Optional[FilesSourceOptions] = None
+        self,
+        target_path: str,
+        native_path: str,
+        user_context: OptionalUserContext = None,
+        opts: Optional[FilesSourceOptions] = None,
     ):
         effective_root = self._effective_root(user_context)
         target_native_path = self._to_native_path(target_path, user_context=user_context)
@@ -210,16 +232,16 @@ class PosixFilesSource(BaseFilesSource):
         shutil.copyfile(native_path, target_native_path_part)
         os.rename(target_native_path_part, target_native_path)
 
-    def _to_native_path(self, source_path: str, user_context=None):
+    def _to_native_path(self, source_path: str, user_context: OptionalUserContext = None):
         source_path = os.path.normpath(source_path)
         if source_path.startswith("/"):
             source_path = source_path[1:]
         return os.path.join(self._effective_root(user_context), source_path)
 
-    def _effective_root(self, user_context=None):
+    def _effective_root(self, user_context: OptionalUserContext = None):
         return self._evaluate_prop(self.root or "/", user_context=user_context)
 
-    def _resource_info_to_dict(self, dir: str, name: str, user_context=None):
+    def _resource_info_to_dict(self, dir: str, name: str, user_context: OptionalUserContext = None) -> AnyRemoteEntry:
         rel_path = os.path.normpath(os.path.join(dir, name))
         full_path = self._to_native_path(rel_path, user_context=user_context)
         uri = self.uri_from_path(rel_path)
@@ -262,7 +284,7 @@ class PosixFilesSource(BaseFilesSource):
             return False
         return True
 
-    def _serialization_props(self, user_context=None) -> PosixFilesSourceProperties:
+    def _serialization_props(self, user_context: OptionalUserContext = None) -> PosixFilesSourceProperties:
         return {
             # abspath needed because will be used by external Python from
             # a job working directory

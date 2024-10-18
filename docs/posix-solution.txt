@@ -49,7 +49,7 @@ SOLUTION: add block by ansible below
 Add self.list_cluster_directories_script parameter to ConfiguredFileSourcesConfig class
 This it can be retrieved in the file upload procedure
 
-lib/galaxy/files/__init__.py
+lib/galaxy/files/plugins.py
 
 SOLUTION: insert by ansible? All Nikolay lines - 5 instances in class ConfiguredFileSourcesConfig:
 
@@ -91,21 +91,32 @@ A better display of "Permission denied" error when trying to list cluster projec
 
 lib/galaxy/managers/remote_files.py
 
-        except Exception:
-            ## Nikolay added for better error display
-            if "list_cluster_directories_script" in self._app.config.config_dict and self._app.config.config_dict["list_cluster_directories_script"] is not None:
-                message = f"Permission denied {file_source_path.path}"
-                log.warning(message, exc_info=True)
-                raise exceptions.InternalServerError(message)
-            else:
-                message = f"Problem listing file source path {file_source_path}"
-                log.warning(message, exc_info=True)
-                raise exceptions.InternalServerError(message)
 
+## The two next modify the Permission denied message
+- name: Remove lines containing method _get_error_message
+  replace:
+    path: "{{ galaxy_server_dir }}/lib/galaxy/managers/remote_files.py"
+    regexp: '.*(_get_error_message|file_source\.get_uri_root).*'
+    replace: ''
 
-SOLUTION: add if condition after "except Exception" by ansible
+# Better display of permission denied
+- name: Add the method _get_error_message to the end of file
+  blockinfile:
+      dest: "{{ galaxy_server_dir }}/lib/galaxy/managers/remote_files.py"
+      block: |
+          {% filter indent(width=4, first=true) %}
+          ## Nikolay
+          ## A better display of Permission denied error when trying to list cluster project directories
+          def _get_error_message(self, file_source_path: FileSourcePath) -> str:
+              if "list_cluster_directories_script" in self._app.config.config_dict and self._app.config.config_dict["list_cluster_directories_script"] is not None:
+                  return f"Permission denied  {file_source_path.file_source.get_uri_root()}{file_source_path.path}"
+              else:
+                  return f"Problem listing file source path {file_source_path.file_source.get_uri_root()}{file_source_path.path}"
+          {% endfilter %}
+      insertafter: EOF
+      state: present
 
-
+SOLUTION: replace _get_error_message by ansible
 
 =================================================== 8 ==============================================================
 
@@ -174,6 +185,20 @@ lib/galaxy/jobs/__init__.py
 
 
 SOLUTION: replace by ansible in copy_galaxy_fox_access task
+
+
+=================================================== 15 ==============================================================
+
+Deactivate object store option:
+
+Comment all object store lines in /common/group_vars/galaxy01_educloud.yml
+- the variables themselves
+- the template copying
+
+Delete object_store xml file in the galaxy config directory on the server.
+
+This is required because the value of the object store backends is "distributed" and Galaxy picks the area at random.
+Uploads fail if FOX partition is chosen as it is Read Only.
 
 
 ========================= Import Directories solution ================

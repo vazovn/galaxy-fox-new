@@ -1,0 +1,80 @@
+---
+
+- id: personal_disk
+  name: Galaxy Server Disk
+  description: Galaxy server disk area.
+  variables:
+    folder_name:
+      type: string
+      help: Folder to create for your user.
+  configuration:
+    type: disk
+    files_dir: '{{ galaxy_lifeportal_data_dir }}/files/'
+    extra_dir: '{{ galaxy_lifeportal_data_dir }}/tmp'
+    extra_dir: '{{ galaxy_lifeportal_data_dir }}/jobs_directory'
+
+- id: hpc_project_disk
+  name: FOX project disk
+  description: Folder in shared shared disk area bound to your project.
+  variables:
+    folder_name:
+      type: string
+      help: Folder to create for your user.
+  configuration:
+    type: disk
+    files_dir: ''/fp/projects01/'
+    extra_dir: '{{ galaxy_lifeportal_data_dir }}/tmp'
+    extra_dir: '{{ galaxy_lifeportal_data_dir }}/jobs_directory'
+    badges:
+    - type: faster
+    - type: less_secure
+    - type: backed_up
+
+- id: hpc_home_disk
+  name: FOX home disk
+  description: Folder in shared shared disk area bound to your project.
+  variables:
+    folder_name:
+      type: string
+      help: Folder to create for your user.
+  configuration:
+    type: disk
+    files_dir: '/fp/homes01/u01/ec-nikolaiv/'
+    extra_dir: '{{ galaxy_lifeportal_data_dir }}/tmp'
+    extra_dir: '{{ galaxy_lifeportal_data_dir }}/jobs_directory'
+    badges:
+    - type: faster
+    - type: less_secure
+    - type: backed_up
+
+- id: minio
+  name: Institutional S3 Storage
+  description: Connect to our institutional MinIO storage service.
+  variables:
+    access_key:
+      type: string
+      help: A description of the user account used to connect to your storage.
+    bucket:
+      type: string
+      help: The bucket to connect to.
+  secrets:
+    secret_key:
+      help: The secret key used to connect to MinIO with for the given access key.
+  configuration:
+    type: generic_s3
+    auth:
+      access_key: '{{ variables.access_key }}'
+      secret_key: '{{ secrets.secret_key }}'
+    bucket:
+      name: '{{ variables.bucket }}'
+      use_reduced_redundancy: false
+    connection:
+      host: localhost
+      port: 9000
+      is_secure: false
+      conn_path: ""
+    badges:
+    - type: slower
+    - type: less_secure
+    - type: less_stable
+
