@@ -46,12 +46,12 @@ SOLUTION: add block by ansible below
 
 =================================================== 3 ==============================================================
 
-Add self.list_cluster_directories_script parameter to ConfiguredFileSourcesConfig class
+Add self.list_cluster_directories_script parameter to FileSourcePluginsConfig class
 This it can be retrieved in the file upload procedure
 
 lib/galaxy/files/plugins.py
 
-SOLUTION: insert by ansible? All Nikolay lines - 5 instances in class ConfiguredFileSourcesConfig:
+SOLUTION: insert by ansible? All Nikolay lines - 5 instances in class FileSourcePluginsConfig:
 
 
 ======================================================= 4 ============================================================
