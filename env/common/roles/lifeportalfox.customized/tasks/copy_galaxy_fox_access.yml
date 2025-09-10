@@ -98,6 +98,20 @@
       insertafter: EOF
       state: present
 
+# Better display of the error message in the history pannel. This is the case when the file for upload is in the directory owned by the project group and
+# it is listed (visible). Yet it does not belong to the real_user AND is not owned by the project group, hence its upload is blocked at the job execution
+# level only
+- name: Display permission denied for files which do not belong to the real user
+  ansible.builtin.replace:
+     path: "{{ galaxy_server_dir }}/lib/galaxy/tools/data_fetch.py"
+     regexp: '^.*Failed to fetch url.*$'
+     replace: |
+        {% filter indent(width=12, first=true) %}
+        if url.startswith("gxuserprojects"):
+            raise Exception(f"Most propably you do not have permissions to manipulate this file {url}. {str(e)}")
+        else:
+            raise Exception(f"Failed to fetch url {url}. {str(e)}")
+        {% endfilter %}
 
 - name: Add list_cluster_directories config schema yaml
   blockinfile:
