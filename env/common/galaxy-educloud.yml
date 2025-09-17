@@ -23,8 +23,13 @@
   become: true
   vars:
       galaxy_diff_mode_verbose: true
+      ## These variables are stored in the file secrets.txt
+      ## To see their values, go to env/{prod,test} and type 'ansible-vault view secrets.txt'
+      ## The password is the same as the one required to run the ansible playbook
       CLIENT_ID: "{{ client_id }}"
       CLIENT_SECRET: "{{ client_secret }}"
+      S3GALAXY_KEY: "{{ s3galaxy_key }}"
+      S3GALAXY_SECRET: "{{ s3galaxy_secret }}"
   vars_files:
     - group_vars/env.yml
   pre_tasks:

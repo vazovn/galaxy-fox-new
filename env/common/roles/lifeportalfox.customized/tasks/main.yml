@@ -51,6 +51,11 @@
    - '    "gxuserprojects://",'
   when: custom_plugin.found != 1
 
+## Task fixing the user access to their respective S3 buckets
+- name: Copy galaxy S3 access
+  include_tasks: copy_galaxy_s3_access.yml
+  when: galaxy_manage_static_setup
+
 ## Tasks related to the modification of the front page (login page with Educloud) ## 
 - name: Verify that Login File has been modified for Galaxy-FOX in order to avoid unnecessary compilation in the next task
   ansible.builtin.lineinfile:

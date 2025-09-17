@@ -10,3 +10,14 @@
   doc: Get your data from FOX project area
   label: FOX project Area
 
+
+- type: s3fs
+  id: galaxy-on-fox-s3-bucket
+  label: "Galaxy Educloud S3 bucket"
+  doc: "Browse and import files directly from this S3 bucket."
+  bucket: "nikolaiv-ns9999k-nikolaiv-bucket1"
+  anon: false
+  client_kwargs:
+      endpoint_url: "https://s3.nird.sigma2.no"
+  secret: 'S3GALAXY_SECRET'
+  key: 'S3GALAXY_KEY'

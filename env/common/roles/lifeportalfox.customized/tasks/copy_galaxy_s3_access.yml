@@ -1,0 +1,27 @@
+---
+
+- name: Print S3GALAXY KEY
+  debug:
+      msg: "This is S3GALAXY_KEY : {{ S3GALAXY_KEY }}"
+
+- name: Print S3GALAXY SECRET
+  debug:
+      msg: "This is S3GALAXY_SECRET {{ S3GALAXY_SECRET }}"
+
+- name: Replace S3GALAXY KEY variable
+  ansible.builtin.replace:
+    path: "{{ galaxy_root }}/config/file_sources_conf.yml"
+    regexp: 'S3GALAXY_KEY'
+    replace: "{{ S3GALAXY_KEY }}"
+
+- name: Replace S3GALAXY SECRET variable
+  ansible.builtin.replace:
+    path: "{{ galaxy_root }}/config/file_sources_conf.yml"
+    regexp: 'S3GALAXY_SECRET'
+    replace: "{{ S3GALAXY_SECRET }}"
+
+- name: Copy modified s3fs file managing the S3 directories display
+  copy:
+    src: "files/galaxy/fox_home_and_projects_access/s3fs.py"
+    dest: "{{ galaxy_server_dir }}/lib/galaxy/files/sources/s3fs.py"
+  when: galaxy_server_dir is defined
